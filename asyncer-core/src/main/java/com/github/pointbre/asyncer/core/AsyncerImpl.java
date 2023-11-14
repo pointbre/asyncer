@@ -29,7 +29,7 @@ public class AsyncerImpl implements Asyncer {
     private final HashSet<Transition> transitions;
 
     private final List<Tuple3<UUID, Event, One<Result>>> requests = new ArrayList<>();
-    private final Thread eventHandler;
+    private final Thread transitionHandler;
 
     private final Many<State> stateSink = Sinks.many().multicast().<State>onBackpressureBuffer(Queues.SMALL_BUFFER_SIZE,
 	    false);
@@ -43,7 +43,7 @@ public class AsyncerImpl implements Asyncer {
 	this.events = events;
 	this.transitions = transitions;
 
-	this.eventHandler = Thread.ofVirtual().name("Asyncer-EventHandler").start(() -> {
+	this.transitionHandler = Thread.ofVirtual().name("asyncer-transition-handler").start(() -> {
 
 	    while (!Thread.currentThread().isInterrupted()) {
 
@@ -145,6 +145,6 @@ public class AsyncerImpl implements Asyncer {
 
     @Override
     public void close() throws Exception {
-	eventHandler.interrupt();
+	transitionHandler.interrupt();
     }
 }
