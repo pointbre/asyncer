@@ -13,9 +13,7 @@ import com.github.pointbre.asyncer.core.Asyncer.Result;
 import com.github.pointbre.asyncer.core.Asyncer.State;
 import com.github.pointbre.asyncer.core.Asyncer.StaticTransition;
 import com.github.pointbre.asyncer.core.Asyncer.Transition;
-import com.github.pointbre.asyncer.core.Asyncer.Result.Type;
 
-import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple3;
 import reactor.util.function.Tuples;
 
@@ -25,17 +23,11 @@ public non-sealed class FailAtEndExecutor extends Executor {
 
     @Override
     protected void handleComplete(Subtask<? extends Result> task) {
-	
 	tasks.add(task);
-	
     }
 
     @Override
-    public Tuple3<State, Result, List<Result>> run(Transition transition) {
-	
-	State state = null;
-	Result result = null;
-	List<Result> results = null;
+    public Tuple3<State, Result, List<Result>> runUntil(Transition transition, Instant deadline) {
 
 	Action action = null;
 	if (transition instanceof StaticTransition t) {
@@ -43,24 +35,29 @@ public non-sealed class FailAtEndExecutor extends Executor {
 	} else if (transition instanceof DynamicTransition t) {
 	    action = t.getAction();
 	    if (action == null) {
-		// Return result
+		return Tuples.of(null, new Asyncer.Result(Asyncer.Result.Type.FAILED, "The transition's action shouldn't be null: " + transition), null);
 	    }
 	}
-
 	if (action != null) {
+	    if (action.getTasks() == null) {
+		return Tuples.of(null, new Asyncer.Result(Asyncer.Result.Type.FAILED, "The action's tasks shouldn't be null: " + action), null);
+	    }
+	    
 	    action.getTasks().stream().forEach(task -> fork(task));
-
 	    try {
-		joinUntil(Instant.now().plusSeconds(5));
-//		join();
+		joinUntil(deadline);
 	    } catch (InterruptedException e) {
 		//
 	    } catch (TimeoutException e) {
 		//
 	    }
 	}
-
+	
 	ensureOwnerAndJoined();
+	
+	State state = null;
+	Result result = null;
+	List<Result> results = null;
 	
 	Asyncer.Result.Type resultType1 = Asyncer.Result.Type.FAILED;
 	if (transition instanceof StaticTransition t) {

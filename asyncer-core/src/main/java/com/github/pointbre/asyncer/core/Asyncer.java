@@ -1,5 +1,6 @@
 package com.github.pointbre.asyncer.core;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.StructuredTaskScope;
@@ -91,7 +92,7 @@ public interface Asyncer extends AutoCloseable {
     public class DynamicTransition extends Transition {
 	@NonNull
 	Action action;
-
+	
 	@NonNull
 	State toWhenProcessed;
 
@@ -131,7 +132,7 @@ public interface Asyncer extends AutoCloseable {
     // FIXME FailNever, FailFast, FailAtEnd
     public abstract sealed class Executor extends StructuredTaskScope<Result> permits FailAtEndExecutor {
 
-	public abstract Tuple3<State, Result, List<Result>> run(Transition transition);
+	public abstract Tuple3<State, Result, List<Result>> runUntil(Transition transition, Instant deadline);
 
 	public static Executor of(Class<? extends Executor> executor) {
 	    if (executor.equals(FailAtEndExecutor.class)) {

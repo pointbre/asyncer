@@ -1,6 +1,7 @@
 package com.github.pointbre.asyncer.core;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -53,7 +54,7 @@ public class AsyncerImpl implements Asyncer {
 		    // UUID has an information about date/time
 		    Tuple3<UUID, Event, One<Result>> request = iterator.next();
 
-		    UUID requestUUID = request.getT1();
+		    UUID requestUUID = request.getT1(); // FIXME what to do with this?
 		    Event requestEvent = request.getT2();
 		    One<Result> requestResultSink = request.getT3();
 
@@ -86,7 +87,7 @@ public class AsyncerImpl implements Asyncer {
 			action = t.getAction();
 			if (action != null) { // could be null
 			    executor = Executor.of(t.getAction().getExecutor());
-			    transitionResult = executor.run(transition);
+			    transitionResult = executor.runUntil(transition, Instant.now().plusSeconds(10)); // FIXME 10 should be from Transition
 			}
 			updatedState = t.getTo();
 			result = new Result(Result.Type.PROCESSED, null);
@@ -96,7 +97,7 @@ public class AsyncerImpl implements Asyncer {
 			    // Shouldn't be null
 			}
 			executor = Executor.of(t.getAction().getExecutor());
-			transitionResult = executor.run(transition);
+			transitionResult = executor.runUntil(transition, Instant.now().plusSeconds(10)); // FIXME 10 should be from Transition
 			updatedState = transitionResult.getT1();
 			result = transitionResult.getT2();
 		    }
