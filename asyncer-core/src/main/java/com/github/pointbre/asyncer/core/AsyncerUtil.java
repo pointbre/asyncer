@@ -1,4 +1,4 @@
-package com.github.pointbre.asyncer.util;
+package com.github.pointbre.asyncer.core;
 
 import java.util.Random;
 import java.util.UUID;

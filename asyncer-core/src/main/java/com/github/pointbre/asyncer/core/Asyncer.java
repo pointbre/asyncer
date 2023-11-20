@@ -2,6 +2,7 @@ package com.github.pointbre.asyncer.core;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.StructuredTaskScope;
 
@@ -34,32 +35,21 @@ public interface Asyncer extends AutoCloseable {
 
     @Value
     public class Event {
-
+	
 	@NonNull
 	String name;
 
     }
-
-    @Value
-    public class Action {
-
-	@NonNull
-	String name;
-
-	@NonNull
-	Class<? extends Executor> executor;
-
-	@NonNull
-	List<Callable<Result>> tasks;
-
-    }
-
+    
     @ToString
     @EqualsAndHashCode
     @AllArgsConstructor
     @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
     @Getter
     public sealed class Transition permits StaticTransition, DynamicTransition {
+	
+	@NonNull
+	String name;
 
 	@NonNull
 	State from;
@@ -79,8 +69,8 @@ public interface Asyncer extends AutoCloseable {
 	@Nullable
 	State to;
 
-	public StaticTransition(@NonNull State from, @NonNull Event event, Action action, State to) {
-	    super(from, event);
+	public StaticTransition(@NonNull String name, @NonNull State from, @NonNull Event event, Action action, State to) {
+	    super(name, from, event);
 	    this.action = action;
 	    this.to = to;
 	}
@@ -99,9 +89,9 @@ public interface Asyncer extends AutoCloseable {
 	@NonNull
 	State toWhenFailed;
 
-	public DynamicTransition(@NonNull State from, @NonNull Event event, @NonNull Action action,
+	public DynamicTransition(@NonNull String name, @NonNull State from, @NonNull Event event, @NonNull Action action,
 		@NonNull State toWhenProcessed, @NonNull State toWhenFailed) {
-	    super(from, event);
+	    super(name, from, event);
 	    this.action = action;
 	    this.toWhenProcessed = toWhenProcessed;
 	    this.toWhenFailed = toWhenFailed;
@@ -110,12 +100,29 @@ public interface Asyncer extends AutoCloseable {
     }
 
     @Value
+    public class Action {
+
+	@NonNull
+	String name;
+
+	@NonNull
+	List<Callable<Result>> tasks;
+	
+	@NonNull
+	Class<? extends Executor> executor;
+	
+	@Nullable
+	Instant deadline;
+
+    }
+    
+    @Value
     public class Result {
 
 	public enum Type {
 	    PROCESSED, FAILED
 	}
-
+	
 	@NonNull
 	Type type;
 
@@ -128,11 +135,11 @@ public interface Asyncer extends AutoCloseable {
 	}
 
     }
-
+    
     // FIXME FailNever, FailFast, FailAtEnd
     public abstract sealed class Executor extends StructuredTaskScope<Result> permits FailAtEndExecutor {
 
-	public abstract Tuple3<State, Result, List<Result>> runUntil(Transition transition, Instant deadline);
+	public abstract Tuple3<State, Result, List<Result>> runUntil(Transition transition) throws InterruptedException;
 
 	public static Executor of(Class<? extends Executor> executor) {
 	    if (executor.equals(FailAtEndExecutor.class)) {
@@ -140,5 +147,7 @@ public interface Asyncer extends AutoCloseable {
 	    }
 	    return new FailAtEndExecutor();
 	}
+	
     }
+ 
 }
