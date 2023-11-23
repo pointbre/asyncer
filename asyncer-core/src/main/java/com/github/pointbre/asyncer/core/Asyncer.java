@@ -2,7 +2,6 @@ package com.github.pointbre.asyncer.core;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.StructuredTaskScope;
 
