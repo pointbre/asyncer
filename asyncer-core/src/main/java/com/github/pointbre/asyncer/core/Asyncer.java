@@ -180,6 +180,9 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 			extends AutoCloseable
 			permits ParallelFAETaskExecutorImpl, SequentialFAETaskExecutorImpl {
 
+		public static final String TASK_TIMEDOUT = "Timed out";
+		public static final String TASK_EXCEPTION = "Exception occurred";
+
 		public List<Result<R>> run(@NonNull S state, @NonNull E event,
 				@NonNull List<BiFunction<S, E, Result<R>>> tasks,
 				@Nullable Duration timeout);
