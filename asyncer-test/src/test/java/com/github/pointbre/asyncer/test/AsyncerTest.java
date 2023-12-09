@@ -1,4 +1,4 @@
-package com.github.pointbre.asyncer.core;
+package com.github.pointbre.asyncer.test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,11 +14,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.github.pointbre.asyncer.core.Asyncer;
 import com.github.pointbre.asyncer.core.Asyncer.Event;
 import com.github.pointbre.asyncer.core.Asyncer.Result;
 import com.github.pointbre.asyncer.core.Asyncer.State;
 import com.github.pointbre.asyncer.core.Asyncer.Transition;
 import com.github.pointbre.asyncer.core.Asyncer.TransitionExecutor;
+import com.github.pointbre.asyncer.core.AsyncerUtil;
+import com.github.pointbre.asyncer.core.DefaultAsyncerImpl;
+import com.github.pointbre.asyncer.core.DefaultTransitionExecutorImpl;
+import com.github.pointbre.asyncer.core.SequentialFAETaskExecutorImpl;
 
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -50,7 +55,7 @@ class AsyncerTest {
 	public class TestEvent extends Event<TestEvent.Type> {
 
 		public enum Type {
-			START, STOP;
+			START, STOP, SEND;
 		}
 
 		String message;

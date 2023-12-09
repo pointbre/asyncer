@@ -29,20 +29,27 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 
 	@Value
 	@NonFinal
-	public abstract class Typed<T> {
+	public class Typed<T> {
 
 		@NonNull
 		T type;
+
+		public Typed(@NonNull T type) {
+			this.type = type;
+		}
 
 	}
 
 	@Value
 	@NonFinal
-	public abstract class Unique {
+	public class Unique {
 
 		@NonNull
 		UUID uuid;
 
+		public Unique(@NonNull UUID uuid) {
+			this.uuid = uuid;
+		}
 	}
 
 	@Value

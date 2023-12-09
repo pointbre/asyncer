@@ -4,7 +4,13 @@ import java.util.Random;
 import java.util.UUID;
 
 public class AsyncerUtil {
-	// https://www.baeldung.com/java-uuid
+
+	private static final Random random = new Random();
+
+	private AsyncerUtil() {
+	}
+
+	// The below code is from https://www.baeldung.com/java-uuid
 	public static UUID generateType1UUID() {
 		long most64SigBits = get64MostSignificantBitsForVersion1();
 		long least64SigBits = get64LeastSignificantBitsForVersion1();
@@ -12,7 +18,6 @@ public class AsyncerUtil {
 	}
 
 	private static long get64LeastSignificantBitsForVersion1() {
-		Random random = new Random();
 		long random63BitLong = random.nextLong() & 0x3FFFFFFFFFFFFFFFL;
 		long variant3BitFlag = 0x8000000000000000L;
 		return random63BitLong | variant3BitFlag;

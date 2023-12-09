@@ -40,6 +40,7 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 	@NonNull
 	private final TransitionExecutor<S, T, E, F, Boolean> transitionExecutor;
 
+
 	private final BlockingQueue<Request<S, T, E, F>> requests = new LinkedBlockingQueue<>();
 	private final Thread transitionHandler;
 	private final Request<S, T, E, F> POISON_PILL = new Request<>(null, null, null);
