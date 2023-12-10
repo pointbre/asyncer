@@ -26,7 +26,7 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 			One<TransitionResult<S, T, E, F, Boolean>> resultSink) {
 	}
 
-	private final UUID uuid = AsyncerUtil.generateType1UUID();
+	private final UUID uuid = Asyncer.generateType1UUID();
 
 	@NonNull
 	private final S initialState;
@@ -39,7 +39,6 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 
 	@NonNull
 	private final TransitionExecutor<S, T, E, F, Boolean> transitionExecutor;
-
 
 	private final BlockingQueue<Request<S, T, E, F>> requests = new LinkedBlockingQueue<>();
 	private final Thread transitionHandler;
@@ -141,7 +140,7 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 		});
 
 		this.currentState = initialState;
-		stateSink.tryEmitNext(new Change<>(AsyncerUtil.generateType1UUID(), initialState));
+		stateSink.tryEmitNext(new Change<>(Asyncer.generateType1UUID(), initialState));
 
 	}
 

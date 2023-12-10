@@ -30,7 +30,7 @@ public non-sealed class DefaultTransitionExecutorImpl<S extends State<T>, T, E e
 			states.add(firstState);
 
 			try {
-				stateSink.tryEmitNext(new Change<>(AsyncerUtil.generateType1UUID(), firstState));
+				stateSink.tryEmitNext(new Change<>(Asyncer.generateType1UUID(), firstState));
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -51,7 +51,7 @@ public non-sealed class DefaultTransitionExecutorImpl<S extends State<T>, T, E e
 				states.add(secondState);
 
 				try {
-					stateSink.tryEmitNext(new Change<>(AsyncerUtil.generateType1UUID(), secondState));
+					stateSink.tryEmitNext(new Change<>(Asyncer.generateType1UUID(), secondState));
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

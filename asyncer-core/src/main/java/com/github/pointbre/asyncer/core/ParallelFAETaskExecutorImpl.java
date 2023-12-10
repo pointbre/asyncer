@@ -9,7 +9,6 @@ import java.util.concurrent.StructuredTaskScope;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import com.github.pointbre.asyncer.core.Asyncer.Event;
 import com.github.pointbre.asyncer.core.Asyncer.Result;
@@ -50,10 +49,10 @@ public non-sealed class ParallelFAETaskExecutorImpl<S extends State<T>, T, E ext
 			}
 		}
 
-		IntStream.range(1, tasks.size() - results.size())
-				.forEach(n -> {
-					results.add(new Result<>(AsyncerUtil.generateType1UUID(), Boolean.FALSE, TASK_TIMEDOUT));
-				});
+		// If any timed out task is found, add the result
+		for (int i = 1; i <= tasks.size() - results.size(); i++) {
+			results.add(new Result<>(Asyncer.generateType1UUID(), Boolean.FALSE, TASK_TIMEDOUT));
+		}
 
 		return results.stream().collect(Collectors.toUnmodifiableList());
 	}
@@ -61,10 +60,10 @@ public non-sealed class ParallelFAETaskExecutorImpl<S extends State<T>, T, E ext
 	@Override
 	protected void handleComplete(Subtask<? extends Result<Boolean>> task) {
 		if (task.state() == Subtask.State.FAILED) {
-			results.add(new Result<>(AsyncerUtil.generateType1UUID(),
-					Boolean.FALSE, TASK_EXCEPTION + ": " + task.exception()));
+			results.add(new Result<>(Asyncer.generateType1UUID(), Boolean.FALSE,
+					TASK_EXCEPTION + ": " + task.exception().getLocalizedMessage()));
 		} else if (task.state() == Subtask.State.UNAVAILABLE) {
-			results.add(new Result<>(AsyncerUtil.generateType1UUID(), Boolean.FALSE, "Not completed after forked"));
+			results.add(new Result<>(Asyncer.generateType1UUID(), Boolean.FALSE, TASK_NOT_COMPLETED));
 		} else {
 			results.add(task.get());
 		}

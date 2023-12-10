@@ -19,14 +19,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.github.pointbre.asyncer.core.Asyncer;
 import com.github.pointbre.asyncer.core.Asyncer.Result;
 import com.github.pointbre.asyncer.core.Asyncer.TaskExecutor;
-import com.github.pointbre.asyncer.core.ParallelFAETaskExecutorImpl;
+import com.github.pointbre.asyncer.core.SequentialFAETaskExecutorImpl;
 import com.github.pointbre.asyncer.test.TestAsyncer.TestEvent;
 import com.github.pointbre.asyncer.test.TestAsyncer.TestState;
 
 import lombok.Cleanup;
 
 @ExtendWith(MockitoExtension.class)
-class ParallelFATTaskExecutorImplTest {
+class SequentialFAETaskExecutorImplTest {
 
     private static final String DONE_1 = "Done 1";
     private static final String DONE_2 = "Done 2";
@@ -34,13 +34,13 @@ class ParallelFATTaskExecutorImplTest {
 
     private static Stream<Arguments> timeoutTestCases() {
         return Stream.of(
-                Arguments.of("When the timeout is null, both tasks should be completed successfully(task 2 --> task 1)",
-                        null, true, DONE_2, true, DONE_1),
+                Arguments.of("When the timeout is null, both tasks should be completed successfully(task 1 --> task 2)",
+                        null, true, DONE_1, true, DONE_2),
                 Arguments.of(
-                        "When the timeout is 3 seconds, both tasks should be completed successfully(task 2 --> task 1)",
-                        Duration.ofSeconds(3), true, DONE_2, true, DONE_1),
+                        "When the timeout is 3 seconds, both tasks should be completed successfully(task 1 --> task 2)",
+                        Duration.ofSeconds(3), true, DONE_1, true, DONE_2),
                 Arguments.of("When the timeout is 1.5 seconds, the first task should be timed out",
-                        Duration.ofMillis(1500), true, DONE_2, false, TaskExecutor.TASK_TIMEDOUT));
+                        Duration.ofMillis(1500), false, TaskExecutor.TASK_TIMEDOUT, true, DONE_2));
     }
 
     @ParameterizedTest(name = "{index}: {0} - {1}")
@@ -70,8 +70,8 @@ class ParallelFATTaskExecutorImplTest {
                         }));
 
         @Cleanup
-        TaskExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> taskExecutor = new ParallelFAETaskExecutorImpl<>();
-        List<Result<Boolean>> results = taskExecutor.run(new TestAsyncer.TestState(TestState.Type.STOPPED),
+        TaskExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> taskExecutor = new SequentialFAETaskExecutorImpl<>();
+        List<Result<Boolean>> results = taskExecutor.run(new TestState(TestState.Type.STOPPED),
                 new TestEvent(TestEvent.Type.START), task, timeout);
 
         assertEquals(2, results.size());
@@ -98,7 +98,7 @@ class ParallelFATTaskExecutorImplTest {
                         }));
 
         @Cleanup
-        TaskExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> taskExecutor1 = new ParallelFAETaskExecutorImpl<>();
+        TaskExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> taskExecutor1 = new SequentialFAETaskExecutorImpl<>();
         List<Result<Boolean>> results1 = taskExecutor1.run(new TestState(TestState.Type.STOPPED),
                 new TestEvent(TestEvent.Type.START), task1, null);
 
@@ -110,7 +110,7 @@ class ParallelFATTaskExecutorImplTest {
     }
 
     @Test
-    void shouldExecuteAllOfTasksAtTheSameTime() throws Exception {
+    void shouldExecuteAllOfTasksSequentially() throws Exception {
         List<BiFunction<TestState, TestEvent, Result<Boolean>>> task = new ArrayList<>(
                 Arrays.asList(
                         (state, event) -> {
@@ -139,17 +139,17 @@ class ParallelFATTaskExecutorImplTest {
                         }));
 
         @Cleanup
-        TaskExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> taskExecutor = new ParallelFAETaskExecutorImpl<>();
+        TaskExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> taskExecutor = new SequentialFAETaskExecutorImpl<>();
         List<Result<Boolean>> results = taskExecutor.run(new TestState(TestState.Type.STOPPED),
                 new TestEvent(TestEvent.Type.START), task, null);
 
         assertEquals(3, results.size());
         assertTrue(results.get(0).getValue());
-        assertTrue(results.get(0).getDescription().startsWith(DONE_3));
+        assertTrue(results.get(0).getDescription().startsWith(DONE_1));
         assertTrue(results.get(1).getValue());
         assertTrue(results.get(1).getDescription().startsWith(DONE_2));
         assertTrue(results.get(2).getValue());
-        assertTrue(results.get(2).getDescription().startsWith(DONE_1));
+        assertTrue(results.get(2).getDescription().startsWith(DONE_3));
     }
 
     @Test
@@ -166,7 +166,7 @@ class ParallelFATTaskExecutorImplTest {
                         }));
 
         @Cleanup
-        TaskExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> taskExecutor = new ParallelFAETaskExecutorImpl<>();
+        TaskExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> taskExecutor = new SequentialFAETaskExecutorImpl<>();
         try {
             taskExecutor.run(null, null, task, null);
             fail("Should throw an NPE");

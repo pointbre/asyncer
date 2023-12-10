@@ -39,14 +39,12 @@ public non-sealed class SequentialFAETaskExecutorImpl<S extends State<T>, T, E e
 					try {
 						scope.join();
 					} catch (InterruptedException e) {
-						System.out.println("111 Interrupted called");
 						return taskResults;
 					}
 				} else {
 					try {
 						scope.joinUntil(Instant.now().plus(timeout));
 					} catch (InterruptedException e) {
-						System.out.println("222 Interrupted called");
 						return taskResults;
 					} catch (TimeoutException e) {
 						isTimedOut = true;
@@ -54,14 +52,13 @@ public non-sealed class SequentialFAETaskExecutorImpl<S extends State<T>, T, E e
 				}
 
 				if (isTimedOut) {
-					taskResults.add(new Result<>(AsyncerUtil.generateType1UUID(), Boolean.FALSE,
-							"Task execution timed out: " + task));
+					taskResults.add(new Result<>(Asyncer.generateType1UUID(), Boolean.FALSE, TASK_TIMEDOUT));
 				} else {
 					try {
 						taskResults.add(scope.result());
 					} catch (Exception e) {
-						taskResults.add(new Result<>(AsyncerUtil.generateType1UUID(), Boolean.FALSE,
-								"Failed to get the result of the task " + task + " : " + e.getLocalizedMessage()));
+						taskResults.add(new Result<>(Asyncer.generateType1UUID(), Boolean.FALSE,
+								TASK_EXCEPTION + ": " + e.getLocalizedMessage()));
 					}
 				}
 			}
@@ -73,11 +70,8 @@ public non-sealed class SequentialFAETaskExecutorImpl<S extends State<T>, T, E e
 	@Override
 	public void close() throws Exception {
 
-		System.out.println("SequentialFailAtEndTaskExecutor's close() called");
-
 		scopes.forEach(scope -> {
 			if (!scope.isShutdown()) {
-				System.out.println("Closing " + scope);
 				try {
 					scope.close();
 				} catch (Exception e) {

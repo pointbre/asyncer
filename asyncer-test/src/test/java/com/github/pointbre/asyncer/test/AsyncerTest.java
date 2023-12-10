@@ -20,7 +20,6 @@ import com.github.pointbre.asyncer.core.Asyncer.Result;
 import com.github.pointbre.asyncer.core.Asyncer.State;
 import com.github.pointbre.asyncer.core.Asyncer.Transition;
 import com.github.pointbre.asyncer.core.Asyncer.TransitionExecutor;
-import com.github.pointbre.asyncer.core.AsyncerUtil;
 import com.github.pointbre.asyncer.core.DefaultAsyncerImpl;
 import com.github.pointbre.asyncer.core.DefaultTransitionExecutorImpl;
 import com.github.pointbre.asyncer.core.SequentialFAETaskExecutorImpl;
@@ -89,7 +88,7 @@ class AsyncerTest {
 				Arrays.asList(
 						(state, event) -> {
 							System.out.println("inside of task: state=" + state + ", event=" + event);
-							return new Result<>(AsyncerUtil.generateType1UUID(), Boolean.TRUE, "done");
+							return new Result<>(Asyncer.generateType1UUID(), Boolean.TRUE, "done");
 						}));
 
 		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> stoppedToStartingAndThenStartedOrStopped = new Transition<>(
@@ -120,7 +119,7 @@ class AsyncerTest {
 
 			System.out.println("2");
 
-			asyncer.fire(AsyncerUtil.generateType1UUID(), new TestEvent(TestEvent.Type.START, "additional message"))
+			asyncer.fire(Asyncer.generateType1UUID(), new TestEvent(TestEvent.Type.START, "additional message"))
 					.subscribe(r -> {
 						System.out.println("fire START finished=" + r);
 						latch.countDown();

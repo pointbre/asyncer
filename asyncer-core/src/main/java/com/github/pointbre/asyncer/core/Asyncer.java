@@ -2,6 +2,7 @@ package com.github.pointbre.asyncer.core;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 import java.util.function.BiFunction;
 
@@ -182,9 +183,32 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 
 		public static final String TASK_TIMEDOUT = "Timed out";
 		public static final String TASK_EXCEPTION = "Exception occurred";
+		public static final String TASK_NOT_COMPLETED = "Not completed after forked";
 
 		public List<Result<R>> run(@NonNull S state, @NonNull E event,
 				@NonNull List<BiFunction<S, E, Result<R>>> tasks,
 				@Nullable Duration timeout);
+	}
+
+	// The below code is from https://www.baeldung.com/java-uuid
+	static UUID generateType1UUID() {
+		long most64SigBits = Asyncer.get64MostSignificantBitsForVersion1();
+		long least64SigBits = Asyncer.get64LeastSignificantBitsForVersion1();
+		return new UUID(most64SigBits, least64SigBits);
+	}
+
+	private static long get64MostSignificantBitsForVersion1() {
+		final long currentTimeMillis = System.currentTimeMillis();
+		final long time_low = (currentTimeMillis & 0x0000_0000_FFFF_FFFFL) << 32;
+		final long time_mid = ((currentTimeMillis >> 32) & 0xFFFF) << 16;
+		final long version = 1 << 12;
+		final long time_hi = ((currentTimeMillis >> 48) & 0x0FFF);
+		return time_low | time_mid | version | time_hi;
+	}
+
+	private static long get64LeastSignificantBitsForVersion1() {
+		long random63BitLong = new Random().nextLong() & 0x3FFFFFFFFFFFFFFFL;
+		long variant3BitFlag = 0x8000000000000000L;
+		return random63BitLong | variant3BitFlag;
 	}
 }
