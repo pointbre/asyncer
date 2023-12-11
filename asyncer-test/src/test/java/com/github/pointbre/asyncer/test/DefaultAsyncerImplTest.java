@@ -28,8 +28,9 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 
 @ExtendWith(MockitoExtension.class)
-class AsyncerTest {
+class DefaultAsyncerImplTest {
 
+	// FIXME Use TestAsyncer instead of below definitions
 	@Value
 	@EqualsAndHashCode(callSuper = true)
 	public class TestState extends State<TestState.Type> {

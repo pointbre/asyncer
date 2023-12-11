@@ -29,6 +29,7 @@ public non-sealed class DefaultTransitionExecutorImpl<S extends State<T>, T, E e
 			S firstState = transition.getTo();
 			states.add(firstState);
 
+			// FIXME Automatic retry?
 			try {
 				stateSink.tryEmitNext(new Change<>(Asyncer.generateType1UUID(), firstState));
 			} catch (Exception e) {

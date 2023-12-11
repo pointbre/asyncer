@@ -1,6 +1,13 @@
 package com.github.pointbre.asyncer.test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.BiFunction;
+
+import com.github.pointbre.asyncer.core.Asyncer;
 import com.github.pointbre.asyncer.core.Asyncer.Event;
+import com.github.pointbre.asyncer.core.Asyncer.Result;
 import com.github.pointbre.asyncer.core.Asyncer.State;
 
 import lombok.EqualsAndHashCode;
@@ -50,4 +57,28 @@ public class TestAsyncer {
             return this.getType().name() + (message == null ? "" : ": " + message);
         }
     }
+
+    public static final String DONE_1 = "Done 1";
+    public static final long SLEEP_1 = 2000;
+    public static final String DONE_2 = "Done 2";
+    public static final long SLEEP_2 = 1000;
+
+    public static final List<BiFunction<TestState, TestEvent, Result<Boolean>>> task = new ArrayList<>(
+            Arrays.asList(
+                    (state, event) -> {
+                        try {
+                            Thread.sleep(SLEEP_1);
+                        } catch (InterruptedException e) {
+                            //
+                        }
+                        return new Result<>(Asyncer.generateType1UUID(), Boolean.TRUE, DONE_1);
+                    },
+                    (state, event) -> {
+                        try {
+                            Thread.sleep(SLEEP_2);
+                        } catch (InterruptedException e) {
+                            //
+                        }
+                        return new Result<>(Asyncer.generateType1UUID(), Boolean.TRUE, DONE_2);
+                    }));
 }
