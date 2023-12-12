@@ -1,4 +1,4 @@
-package com.github.pointbre.asyncer.test;
+package com.github.pointbre.asyncer.core;
 
 import java.util.ArrayList;
 import java.util.Arrays;

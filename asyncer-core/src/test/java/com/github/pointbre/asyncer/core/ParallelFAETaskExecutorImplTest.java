@@ -1,4 +1,4 @@
-package com.github.pointbre.asyncer.test;
+package com.github.pointbre.asyncer.core;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -15,9 +15,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.github.pointbre.asyncer.core.Asyncer.Result;
 import com.github.pointbre.asyncer.core.Asyncer.TaskExecutor;
+import com.github.pointbre.asyncer.core.TestAsyncer.TestEvent;
+import com.github.pointbre.asyncer.core.TestAsyncer.TestState;
 import com.github.pointbre.asyncer.core.ParallelFAETaskExecutorImpl;
-import com.github.pointbre.asyncer.test.TestAsyncer.TestEvent;
-import com.github.pointbre.asyncer.test.TestAsyncer.TestState;
 
 import lombok.Cleanup;
 

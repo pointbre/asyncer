@@ -1,13 +1,16 @@
-package com.github.pointbre.asyncer.test;
+package com.github.pointbre.asyncer.core;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
+import org.awaitility.Awaitility;
+import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -17,10 +20,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.github.pointbre.asyncer.core.Asyncer;
 import com.github.pointbre.asyncer.core.Asyncer.Result;
 import com.github.pointbre.asyncer.core.Asyncer.TaskExecutor;
+import com.github.pointbre.asyncer.core.TestAsyncer.TestEvent;
+import com.github.pointbre.asyncer.core.TestAsyncer.TestState;
 import com.github.pointbre.asyncer.core.ParallelFAETaskExecutorImpl;
 import com.github.pointbre.asyncer.core.SequentialFAETaskExecutorImpl;
-import com.github.pointbre.asyncer.test.TestAsyncer.TestEvent;
-import com.github.pointbre.asyncer.test.TestAsyncer.TestState;
 
 @ExtendWith(MockitoExtension.class)
 class TaskExecutorTest {
@@ -42,8 +45,9 @@ class TaskExecutorTest {
                         },
                         (state, event) -> {
                             try {
-                                Thread.sleep(1000);
-                            } catch (InterruptedException e) {
+                                // Same with Thread.sleep(100);
+                                Awaitility.await().pollDelay(Duration.ofMillis(100)).until(() -> true);
+                            } catch (ConditionTimeoutException e) {
                                 fail(e.getLocalizedMessage());
                             }
                             return new Result<>(Asyncer.generateType1UUID(), Boolean.TRUE, TestAsyncer.DONE_1);
@@ -69,8 +73,9 @@ class TaskExecutorTest {
                 Arrays.asList(
                         (state, event) -> {
                             try {
-                                Thread.sleep(1000);
-                            } catch (InterruptedException e) {
+                                // Same with Thread.sleep(100);
+                                Awaitility.await().pollDelay(Duration.ofMillis(100)).until(() -> true);
+                            } catch (ConditionTimeoutException e) {
                                 fail(e.getLocalizedMessage());
                             }
                             return new Result<>(Asyncer.generateType1UUID(), Boolean.TRUE, TestAsyncer.DONE_1);
@@ -85,4 +90,6 @@ class TaskExecutorTest {
             fail("Should throw an NPE");
         }
     }
+
+    // TODO What if the task returns null?
 }

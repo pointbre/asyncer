@@ -191,7 +191,7 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 	}
 
 	// The below code is from https://www.baeldung.com/java-uuid
-	static UUID generateType1UUID() {
+	public static UUID generateType1UUID() {
 		long most64SigBits = Asyncer.get64MostSignificantBitsForVersion1();
 		long least64SigBits = Asyncer.get64LeastSignificantBitsForVersion1();
 		return new UUID(most64SigBits, least64SigBits);
