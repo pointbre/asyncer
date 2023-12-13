@@ -17,13 +17,10 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.github.pointbre.asyncer.core.Asyncer;
 import com.github.pointbre.asyncer.core.Asyncer.Result;
 import com.github.pointbre.asyncer.core.Asyncer.TaskExecutor;
 import com.github.pointbre.asyncer.core.TestAsyncer.TestEvent;
 import com.github.pointbre.asyncer.core.TestAsyncer.TestState;
-import com.github.pointbre.asyncer.core.ParallelFAETaskExecutorImpl;
-import com.github.pointbre.asyncer.core.SequentialFAETaskExecutorImpl;
 
 @ExtendWith(MockitoExtension.class)
 class TaskExecutorTest {
@@ -54,8 +51,7 @@ class TaskExecutorTest {
                         }));
 
         try (taskExecutor) {
-            List<Result<Boolean>> results = taskExecutor.run(new TestState(TestState.Type.STOPPED),
-                    new TestEvent(TestEvent.Type.START), task1, null);
+            List<Result<Boolean>> results = taskExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, task1, null);
 
             assertEquals(2, results.size());
             assertFalse(results.get(0).getValue());
@@ -63,6 +59,22 @@ class TaskExecutorTest {
             assertTrue(results.get(1).getValue());
             assertTrue(results.get(1).getDescription().startsWith(TestAsyncer.DONE_1));
         }
+    }
+
+    @ParameterizedTest(name = "{index}: {0}")
+    @MethodSource("taskExecutors")
+    void shouldReturnFalseWhenTaskReturnsNull(String name,
+            TaskExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> taskExecutor) throws Exception {
+        List<BiFunction<TestState, TestEvent, Result<Boolean>>> task = new ArrayList<>(
+                Arrays.asList(
+                        (state, event) -> {
+                            return null;
+                        }));
+
+        List<Result<Boolean>> results = taskExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, task, null);
+        assertEquals(1, results.size());
+        assertFalse(results.get(0).getValue());
+        assertTrue(results.get(0).getDescription().startsWith(TaskExecutor.TASK_NULL_RESULT));
     }
 
     @ParameterizedTest(name = "{index}: {0}")
@@ -83,13 +95,11 @@ class TaskExecutorTest {
 
         try (taskExecutor) {
             taskExecutor.run(null, null, task, null);
-            fail("Should throw an NPE");
+            fail("Should throw a NPE");
         } catch (NullPointerException e) {
             //
         } catch (Exception e) {
-            fail("Should throw an NPE");
+            fail("Should throw a NPE");
         }
     }
-
-    // TODO What if the task returns null?
 }

@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.github.pointbre.asyncer.core.Asyncer.Change;
 import com.github.pointbre.asyncer.core.Asyncer.Result;
+import com.github.pointbre.asyncer.core.Asyncer.TaskExecutorType;
 import com.github.pointbre.asyncer.core.Asyncer.Transition;
 import com.github.pointbre.asyncer.core.Asyncer.TransitionExecutor;
 import com.github.pointbre.asyncer.core.TestAsyncer.TestEvent;
@@ -35,16 +36,155 @@ class TransitionExecutorTest {
 				Arguments.of("DefaultTransitionExecutorImpl", new DefaultTransitionExecutorImpl<>()));
 	}
 
-	// NonNull check
-	// state is null
-	// event is null
-	// transition is null
-	// transition's from is null
-	// transition's event is null
+	@ParameterizedTest(name = "{index}: {0}")
+	@MethodSource("transitionExecutors")
+	void shouldThrowANPEWhenAnyMandatoryArgumentIsNull(String name,
+			TransitionExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transitionExecutor)
+			throws Exception {
+
+		List<BiFunction<TestState, TestEvent, Result<Boolean>>> tasks1 = new ArrayList<>(
+				Arrays.asList(
+						(state, event) -> {
+							return new Result<>(Asyncer.generateType1UUID(), Boolean.TRUE, TestAsyncer.DONE_1);
+						}));
+
+		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> stoppedToStartingAndThenStartedOrStopped = new Transition<>(
+				"Stopped --(START)--> Started | Stopped", TestAsyncer.STOPPED, TestAsyncer.START, TestAsyncer.STARTING,
+				tasks1, TaskExecutorType.SEQUENTIAL_FAE, null, TestAsyncer.STARTED, TestAsyncer.STOPPED);
+
+		Set<Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>> transitions = new HashSet<>();
+		transitions.add(stoppedToStartingAndThenStartedOrStopped);
+
+		var stateSink = Sinks.many().multicast()
+				.<Change<TestState>>onBackpressureBuffer(Queues.SMALL_BUFFER_SIZE, false);
+
+		try {
+			transitionExecutor.run(null, TestAsyncer.STOPPED, TestAsyncer.START,
+					stoppedToStartingAndThenStartedOrStopped, stateSink);
+			fail("Should throw a NPE");
+		} catch (NullPointerException e) {
+			//
+		} catch (Exception e) {
+			fail("Should throw a NPE");
+		}
+
+		try {
+			transitionExecutor.run(Asyncer.generateType1UUID(), null, TestAsyncer.START,
+					stoppedToStartingAndThenStartedOrStopped, stateSink);
+			fail("Should throw a NPE");
+		} catch (NullPointerException e) {
+			//
+		} catch (Exception e) {
+			fail("Should throw a NPE");
+		}
+
+		try {
+			transitionExecutor.run(Asyncer.generateType1UUID(), TestAsyncer.STOPPED, null,
+					stoppedToStartingAndThenStartedOrStopped, stateSink);
+			fail("Should throw a NPE");
+		} catch (NullPointerException e) {
+			//
+		} catch (Exception e) {
+			fail("Should throw a NPE");
+		}
+
+		try {
+			transitionExecutor.run(Asyncer.generateType1UUID(), TestAsyncer.STOPPED, TestAsyncer.START,
+					null, stateSink);
+			fail("Should throw a NPE");
+		} catch (NullPointerException e) {
+			//
+		} catch (Exception e) {
+			fail("Should throw a NPE");
+		}
+
+		try {
+			transitionExecutor.run(Asyncer.generateType1UUID(), TestAsyncer.STOPPED, TestAsyncer.START,
+					stoppedToStartingAndThenStartedOrStopped, null);
+			fail("Should throw a NPE");
+		} catch (NullPointerException e) {
+			//
+		} catch (Exception e) {
+			fail("Should throw a NPE");
+		}
+	}
 
 	// Current state & event should be same with the transition
 	// state != transition.from
 	// event != transition.event
+
+	@ParameterizedTest(name = "{index}: {0}")
+	@MethodSource("transitionExecutors")
+	void shouldYYY(String name,
+			TransitionExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transitionExecutor)
+			throws Exception {
+
+		List<BiFunction<TestState, TestEvent, Result<Boolean>>> tasks1 = new ArrayList<>(
+				Arrays.asList(
+						(state, event) -> {
+							return new Result<>(Asyncer.generateType1UUID(), Boolean.TRUE, TestAsyncer.DONE_1);
+						}));
+
+		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> stoppedToStartingAndThenStartedOrStopped = new Transition<>(
+				"Stopped --(START)--> Started | Stopped", TestAsyncer.STOPPED, TestAsyncer.START, TestAsyncer.STARTING,
+				tasks1, TaskExecutorType.SEQUENTIAL_FAE, null, TestAsyncer.STARTED, TestAsyncer.STOPPED);
+
+		Set<Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>> transitions = new HashSet<>();
+		transitions.add(stoppedToStartingAndThenStartedOrStopped);
+
+		var stateSink = Sinks.many().multicast()
+				.<Change<TestState>>onBackpressureBuffer(Queues.SMALL_BUFFER_SIZE, false);
+
+		try {
+			transitionExecutor.run(null, TestAsyncer.STOPPED, TestAsyncer.START,
+					stoppedToStartingAndThenStartedOrStopped, stateSink);
+			fail("Should throw a NPE");
+		} catch (NullPointerException e) {
+			//
+		} catch (Exception e) {
+			fail("Should throw a NPE");
+		}
+
+		try {
+			transitionExecutor.run(Asyncer.generateType1UUID(), null, TestAsyncer.START,
+					stoppedToStartingAndThenStartedOrStopped, stateSink);
+			fail("Should throw a NPE");
+		} catch (NullPointerException e) {
+			//
+		} catch (Exception e) {
+			fail("Should throw a NPE");
+		}
+
+		try {
+			transitionExecutor.run(Asyncer.generateType1UUID(), TestAsyncer.STOPPED, null,
+					stoppedToStartingAndThenStartedOrStopped, stateSink);
+			fail("Should throw a NPE");
+		} catch (NullPointerException e) {
+			//
+		} catch (Exception e) {
+			fail("Should throw a NPE");
+		}
+
+		try {
+			transitionExecutor.run(Asyncer.generateType1UUID(), TestAsyncer.STOPPED, TestAsyncer.START,
+					null, stateSink);
+			fail("Should throw a NPE");
+		} catch (NullPointerException e) {
+			//
+		} catch (Exception e) {
+			fail("Should throw a NPE");
+		}
+
+		try {
+			transitionExecutor.run(Asyncer.generateType1UUID(), TestAsyncer.STOPPED, TestAsyncer.START,
+					stoppedToStartingAndThenStartedOrStopped, null);
+			fail("Should throw a NPE");
+		} catch (NullPointerException e) {
+			//
+		} catch (Exception e) {
+			fail("Should throw a NPE");
+		}
+	}
 
 	// state
 
@@ -52,7 +192,9 @@ class TransitionExecutorTest {
 
 	// state -> state -> tasks
 
-	// state -> state -> tasks -> state
+	// state -> state -> tasks -> state 1
+
+	// state -> state -> tasks -> state 2
 
 	@ParameterizedTest(name = "{index}: {0}")
 	@MethodSource("transitionExecutors")
@@ -74,7 +216,7 @@ class TransitionExecutorTest {
 		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> stoppedToStartingAndThenStartedOrStopped = new Transition<>(
 				"Stopped --(START)--> Started | Stopped", TestAsyncer.STOPPED, TestAsyncer.START,
 				TestAsyncer.STARTING,
-				tasks1, new SequentialFAETaskExecutorImpl<>(), null, TestAsyncer.STARTED,
+				tasks1, TaskExecutorType.SEQUENTIAL_FAE, null, TestAsyncer.STARTED,
 				TestAsyncer.STOPPED);
 
 		Set<Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>> transitions = new HashSet<>();
@@ -101,4 +243,5 @@ class TransitionExecutorTest {
 		assertEquals(TestAsyncer.STARTING, result2.getStates().get(0));
 		assertEquals(TestAsyncer.STOPPED, result2.getStates().get(1));
 	}
+
 }

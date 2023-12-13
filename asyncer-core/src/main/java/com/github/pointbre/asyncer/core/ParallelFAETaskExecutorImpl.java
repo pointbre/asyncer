@@ -1,5 +1,7 @@
 package com.github.pointbre.asyncer.core;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -64,8 +66,16 @@ public non-sealed class ParallelFAETaskExecutorImpl<S extends State<T>, T, E ext
 					TASK_EXCEPTION + ": " + task.exception().getLocalizedMessage()));
 		} else if (task.state() == Subtask.State.UNAVAILABLE) {
 			results.add(new Result<>(Asyncer.generateType1UUID(), Boolean.FALSE, TASK_NOT_COMPLETED));
+		} else if (task.get() == null) {
+			results.add(new Result<>(Asyncer.generateType1UUID(), Boolean.FALSE, TASK_NULL_RESULT));
 		} else {
 			results.add(task.get());
 		}
+	}
+
+	public Class<?> getClassFile() {
+		Type type = getClass().getGenericSuperclass();
+		ParameterizedType paramType = (ParameterizedType) type;
+		return (Class<?>) paramType.getActualTypeArguments()[0];
 	}
 }

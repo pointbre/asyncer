@@ -55,7 +55,11 @@ public non-sealed class SequentialFAETaskExecutorImpl<S extends State<T>, T, E e
 					taskResults.add(new Result<>(Asyncer.generateType1UUID(), Boolean.FALSE, TASK_TIMEDOUT));
 				} else {
 					try {
-						taskResults.add(scope.result());
+						if (scope.result() == null) {
+							taskResults.add(new Result<>(Asyncer.generateType1UUID(), Boolean.FALSE, TASK_NULL_RESULT));
+						} else {
+							taskResults.add(scope.result());
+						}
 					} catch (Exception e) {
 						taskResults.add(new Result<>(Asyncer.generateType1UUID(), Boolean.FALSE,
 								TASK_EXCEPTION + ": " + e.getLocalizedMessage()));

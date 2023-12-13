@@ -109,7 +109,7 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 		List<BiFunction<S, E, Result<R>>> tasks;
 
 		@Nullable
-		TaskExecutor<S, T, E, F, R> taskExecutor;
+		TaskExecutorType taskExecutorType;
 
 		@Nullable
 		Duration timeout;
@@ -171,10 +171,17 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 	public sealed interface TransitionExecutor<S extends State<T>, T, E extends Event<F>, F, R>
 			permits DefaultTransitionExecutorImpl {
 
+		public static final String TRANSITION_CURRENT_STATE_MISMATCH = "The current state and the transition don't match";
+		public static final String TRANSITION_CURRENT_EVENT_MISMATCH = "The current event and the transition don't match";
+
 		public TransitionResult<S, T, E, F, R> run(@NonNull UUID uuid,
 				@NonNull S state, @NonNull E event,
 				@NonNull Transition<S, T, E, F, R> transition,
 				@NonNull Many<Change<S>> stateSink);
+	}
+
+	public enum TaskExecutorType {
+		PARALLEL_FAE, SEQUENTIAL_FAE;
 	}
 
 	public sealed interface TaskExecutor<S extends State<T>, T, E extends Event<F>, F, R>
@@ -184,6 +191,7 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 		public static final String TASK_TIMEDOUT = "Timed out";
 		public static final String TASK_EXCEPTION = "Exception occurred";
 		public static final String TASK_NOT_COMPLETED = "Not completed after forked";
+		public static final String TASK_NULL_RESULT = "Null result is returned";
 
 		public List<Result<R>> run(@NonNull S state, @NonNull E event,
 				@NonNull List<BiFunction<S, E, Result<R>>> tasks,

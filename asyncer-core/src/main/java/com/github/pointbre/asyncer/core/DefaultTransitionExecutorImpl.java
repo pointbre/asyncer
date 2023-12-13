@@ -8,6 +8,8 @@ import com.github.pointbre.asyncer.core.Asyncer.Change;
 import com.github.pointbre.asyncer.core.Asyncer.Event;
 import com.github.pointbre.asyncer.core.Asyncer.Result;
 import com.github.pointbre.asyncer.core.Asyncer.State;
+import com.github.pointbre.asyncer.core.Asyncer.TaskExecutor;
+import com.github.pointbre.asyncer.core.Asyncer.TaskExecutorType;
 import com.github.pointbre.asyncer.core.Asyncer.Transition;
 import com.github.pointbre.asyncer.core.Asyncer.TransitionExecutor;
 import com.github.pointbre.asyncer.core.Asyncer.TransitionResult;
@@ -39,23 +41,38 @@ public non-sealed class DefaultTransitionExecutorImpl<S extends State<T>, T, E e
 		}
 
 		if (transition.getTasks() != null && !transition.getTasks().isEmpty()
-				&& transition.getTaskExecutor() != null) {
-			taskResults = transition.getTaskExecutor().run(state, event, transition.getTasks(),
-					transition.getTimeout());
-			if (transition.getToWhenProcessed() != null
-					&& transition.getToWhenFailed() != null) {
-				S secondState = transition.getToWhenFailed();
-				if (transition.getTasks().size() == taskResults.size()
-						&& taskResults.stream().allMatch(r -> r.getValue().booleanValue())) {
-					secondState = transition.getToWhenProcessed();
-				}
-				states.add(secondState);
+				&& transition.getTaskExecutorType() != null) {
 
+			final TaskExecutor<S, T, E, F, Boolean> taskExecutor;
+			if (transition.getTaskExecutorType().equals(TaskExecutorType.PARALLEL_FAE)) {
+				taskExecutor = new ParallelFAETaskExecutorImpl<>();
+			} else {
+				taskExecutor = new SequentialFAETaskExecutorImpl<>();
+			}
+
+			try {
+				taskResults = taskExecutor.run(state, event, transition.getTasks(),
+						transition.getTimeout());
+				if (transition.getToWhenProcessed() != null
+						&& transition.getToWhenFailed() != null) {
+					S secondState = transition.getToWhenFailed();
+					if (transition.getTasks().size() == taskResults.size()
+							&& taskResults.stream().allMatch(r -> r.getValue().booleanValue())) {
+						secondState = transition.getToWhenProcessed();
+					}
+					states.add(secondState);
+
+					try {
+						stateSink.tryEmitNext(new Change<>(Asyncer.generateType1UUID(), secondState));
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			} finally {
 				try {
-					stateSink.tryEmitNext(new Change<>(Asyncer.generateType1UUID(), secondState));
+					taskExecutor.close();
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
 				}
 			}
 		}

@@ -14,15 +14,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.github.pointbre.asyncer.core.Asyncer;
 import com.github.pointbre.asyncer.core.Asyncer.Event;
 import com.github.pointbre.asyncer.core.Asyncer.Result;
 import com.github.pointbre.asyncer.core.Asyncer.State;
+import com.github.pointbre.asyncer.core.Asyncer.TaskExecutorType;
 import com.github.pointbre.asyncer.core.Asyncer.Transition;
 import com.github.pointbre.asyncer.core.Asyncer.TransitionExecutor;
-import com.github.pointbre.asyncer.core.DefaultAsyncerImpl;
-import com.github.pointbre.asyncer.core.DefaultTransitionExecutorImpl;
-import com.github.pointbre.asyncer.core.SequentialFAETaskExecutorImpl;
 
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -96,7 +93,7 @@ class DefaultAsyncerImplTest {
 				"",
 				new TestState(TestState.Type.STOPPED),
 				new TestEvent(TestEvent.Type.START),
-				new TestState(TestState.Type.STARTING), tasks1, new SequentialFAETaskExecutorImpl<>(),
+				new TestState(TestState.Type.STARTING), tasks1, TaskExecutorType.SEQUENTIAL_FAE,
 				null, new TestState(TestState.Type.STARTED), new TestState(TestState.Type.STOPPED));
 
 		Set<Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>> transitions = new HashSet<>();

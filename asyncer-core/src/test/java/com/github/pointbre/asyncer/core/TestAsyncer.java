@@ -11,7 +11,6 @@ import java.util.function.BiFunction;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 
-import com.github.pointbre.asyncer.core.Asyncer;
 import com.github.pointbre.asyncer.core.Asyncer.Event;
 import com.github.pointbre.asyncer.core.Asyncer.Result;
 import com.github.pointbre.asyncer.core.Asyncer.State;
