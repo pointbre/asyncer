@@ -20,7 +20,6 @@ import com.github.pointbre.asyncer.core.Asyncer.TaskExecutor;
 import lombok.NonNull;
 import reactor.util.annotation.Nullable;
 
-// FIXME don't extend StructuredTaskScope. Include task scope and use it just like SequentialFAETaskExecutor
 public non-sealed class ParallelFAETaskExecutorImpl<S extends State<T>, T, E extends Event<F>, F>
 		extends StructuredTaskScope<Result<Boolean>>
 		implements TaskExecutor<S, T, E, F, Boolean> {
