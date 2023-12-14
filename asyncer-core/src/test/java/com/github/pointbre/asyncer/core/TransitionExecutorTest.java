@@ -7,10 +7,13 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -42,25 +45,27 @@ class TransitionExecutorTest {
 			TransitionExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transitionExecutor)
 			throws Exception {
 
-		List<BiFunction<TestState, TestEvent, Result<Boolean>>> tasks1 = new ArrayList<>(
+		UUID uuid = Asyncer.generateType1UUID();
+
+		List<BiFunction<TestState, TestEvent, Result<Boolean>>> tasks = new ArrayList<>(
 				Arrays.asList(
 						(state, event) -> {
 							return new Result<>(Asyncer.generateType1UUID(), Boolean.TRUE, TestAsyncer.DONE_1);
 						}));
 
-		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> stoppedToStartingAndThenStartedOrStopped = new Transition<>(
+		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transition = new Transition<>(
 				"Stopped --(START)--> Started | Stopped", TestAsyncer.STOPPED, TestAsyncer.START, TestAsyncer.STARTING,
-				tasks1, TaskExecutorType.SEQUENTIAL_FAE, null, TestAsyncer.STARTED, TestAsyncer.STOPPED);
+				tasks, TaskExecutorType.SEQUENTIAL_FAE, null, TestAsyncer.STARTED, TestAsyncer.STOPPED);
 
 		Set<Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>> transitions = new HashSet<>();
-		transitions.add(stoppedToStartingAndThenStartedOrStopped);
+		transitions.add(transition);
 
 		var stateSink = Sinks.many().multicast()
 				.<Change<TestState>>onBackpressureBuffer(Queues.SMALL_BUFFER_SIZE, false);
 
 		try {
-			transitionExecutor.run(null, TestAsyncer.STOPPED, TestAsyncer.START,
-					stoppedToStartingAndThenStartedOrStopped, stateSink);
+			transitionExecutor.run(null,
+					transition, stateSink);
 			fail("Should throw a NPE");
 		} catch (NullPointerException e) {
 			//
@@ -69,27 +74,7 @@ class TransitionExecutorTest {
 		}
 
 		try {
-			transitionExecutor.run(Asyncer.generateType1UUID(), null, TestAsyncer.START,
-					stoppedToStartingAndThenStartedOrStopped, stateSink);
-			fail("Should throw a NPE");
-		} catch (NullPointerException e) {
-			//
-		} catch (Exception e) {
-			fail("Should throw a NPE");
-		}
-
-		try {
-			transitionExecutor.run(Asyncer.generateType1UUID(), TestAsyncer.STOPPED, null,
-					stoppedToStartingAndThenStartedOrStopped, stateSink);
-			fail("Should throw a NPE");
-		} catch (NullPointerException e) {
-			//
-		} catch (Exception e) {
-			fail("Should throw a NPE");
-		}
-
-		try {
-			transitionExecutor.run(Asyncer.generateType1UUID(), TestAsyncer.STOPPED, TestAsyncer.START,
+			transitionExecutor.run(uuid,
 					null, stateSink);
 			fail("Should throw a NPE");
 		} catch (NullPointerException e) {
@@ -99,8 +84,8 @@ class TransitionExecutorTest {
 		}
 
 		try {
-			transitionExecutor.run(Asyncer.generateType1UUID(), TestAsyncer.STOPPED, TestAsyncer.START,
-					stoppedToStartingAndThenStartedOrStopped, null);
+			transitionExecutor.run(uuid,
+					transition, null);
 			fail("Should throw a NPE");
 		} catch (NullPointerException e) {
 			//
@@ -109,139 +94,154 @@ class TransitionExecutorTest {
 		}
 	}
 
-	// Current state & event should be same with the transition
-	// state != transition.from
-	// event != transition.event
-
 	@ParameterizedTest(name = "{index}: {0}")
 	@MethodSource("transitionExecutors")
-	void shouldYYY(String name,
+	void shouldChangeToTheNextStateWhenNoTaskIsSpecified(String name,
 			TransitionExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transitionExecutor)
 			throws Exception {
 
-		List<BiFunction<TestState, TestEvent, Result<Boolean>>> tasks1 = new ArrayList<>(
-				Arrays.asList(
-						(state, event) -> {
-							return new Result<>(Asyncer.generateType1UUID(), Boolean.TRUE, TestAsyncer.DONE_1);
-						}));
-
-		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> stoppedToStartingAndThenStartedOrStopped = new Transition<>(
-				"Stopped --(START)--> Started | Stopped", TestAsyncer.STOPPED, TestAsyncer.START, TestAsyncer.STARTING,
-				tasks1, TaskExecutorType.SEQUENTIAL_FAE, null, TestAsyncer.STARTED, TestAsyncer.STOPPED);
+		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transition = new Transition<>(
+				"Stopped --(START)--> Started", TestAsyncer.STOPPED, TestAsyncer.START,
+				TestAsyncer.STARTED, null, null, null, null, null);
 
 		Set<Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>> transitions = new HashSet<>();
-		transitions.add(stoppedToStartingAndThenStartedOrStopped);
+		transitions.add(transition);
 
 		var stateSink = Sinks.many().multicast()
 				.<Change<TestState>>onBackpressureBuffer(Queues.SMALL_BUFFER_SIZE, false);
 
-		try {
-			transitionExecutor.run(null, TestAsyncer.STOPPED, TestAsyncer.START,
-					stoppedToStartingAndThenStartedOrStopped, stateSink);
-			fail("Should throw a NPE");
-		} catch (NullPointerException e) {
-			//
-		} catch (Exception e) {
-			fail("Should throw a NPE");
-		}
+		final List<Change<TestState>> list = new ArrayList<>();
+		stateSink.asFlux().subscribe(c -> list.add(c));
 
-		try {
-			transitionExecutor.run(Asyncer.generateType1UUID(), null, TestAsyncer.START,
-					stoppedToStartingAndThenStartedOrStopped, stateSink);
-			fail("Should throw a NPE");
-		} catch (NullPointerException e) {
-			//
-		} catch (Exception e) {
-			fail("Should throw a NPE");
-		}
+		var result = transitionExecutor.run(Asyncer.generateType1UUID(), transition,
+				stateSink);
 
-		try {
-			transitionExecutor.run(Asyncer.generateType1UUID(), TestAsyncer.STOPPED, null,
-					stoppedToStartingAndThenStartedOrStopped, stateSink);
-			fail("Should throw a NPE");
-		} catch (NullPointerException e) {
-			//
-		} catch (Exception e) {
-			fail("Should throw a NPE");
-		}
+		assertTrue(result.getValue());
+		assertEquals(1, result.getStates().size());
+		assertEquals(TestAsyncer.STARTED, result.getStates().get(0));
 
-		try {
-			transitionExecutor.run(Asyncer.generateType1UUID(), TestAsyncer.STOPPED, TestAsyncer.START,
-					null, stateSink);
-			fail("Should throw a NPE");
-		} catch (NullPointerException e) {
-			//
-		} catch (Exception e) {
-			fail("Should throw a NPE");
-		}
-
-		try {
-			transitionExecutor.run(Asyncer.generateType1UUID(), TestAsyncer.STOPPED, TestAsyncer.START,
-					stoppedToStartingAndThenStartedOrStopped, null);
-			fail("Should throw a NPE");
-		} catch (NullPointerException e) {
-			//
-		} catch (Exception e) {
-			fail("Should throw a NPE");
-		}
+		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
+			assertEquals(1, list.size());
+			assertEquals(TestAsyncer.STARTED, list.get(0).getValue());
+		});
 	}
-
-	// state
-
-	// state -> state
-
-	// state -> state -> tasks
-
-	// state -> state -> tasks -> state 1
-
-	// state -> state -> tasks -> state 2
 
 	@ParameterizedTest(name = "{index}: {0}")
 	@MethodSource("transitionExecutors")
-	void shouldXXX(String name,
+	void shouldChangeToTheNextStateAndRunTasksWithoutFurtherStateTransitinoWhenNoFurtherTransitionIsSpecified(
+			String name,
 			TransitionExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transitionExecutor)
 			throws Exception {
 
-		var controlResult = new AtomicBoolean();
-
-		List<BiFunction<TestState, TestEvent, Result<Boolean>>> tasks1 = new ArrayList<>(
+		final List<Boolean> executedTasks = new ArrayList<>();
+		List<BiFunction<TestState, TestEvent, Result<Boolean>>> tasks = new ArrayList<>(
 				Arrays.asList(
 						(state, event) -> {
-							// Return the result based on controlResult value
+							executedTasks.add(Boolean.TRUE);
 							return new Result<>(Asyncer.generateType1UUID(),
-									Boolean.valueOf(controlResult.get()),
+									Boolean.TRUE,
 									TestAsyncer.DONE_1);
 						}));
 
-		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> stoppedToStartingAndThenStartedOrStopped = new Transition<>(
-				"Stopped --(START)--> Started | Stopped", TestAsyncer.STOPPED, TestAsyncer.START,
-				TestAsyncer.STARTING,
-				tasks1, TaskExecutorType.SEQUENTIAL_FAE, null, TestAsyncer.STARTED,
-				TestAsyncer.STOPPED);
+		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transition = new Transition<>(
+				"Stopped --(START)--> Started + tasks", TestAsyncer.STOPPED, TestAsyncer.START,
+				TestAsyncer.STARTED, tasks, TaskExecutorType.SEQUENTIAL_FAE, null, null, null);
 
 		Set<Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>> transitions = new HashSet<>();
-		transitions.add(stoppedToStartingAndThenStartedOrStopped);
+		transitions.add(transition);
 
 		var stateSink = Sinks.many().multicast()
 				.<Change<TestState>>onBackpressureBuffer(Queues.SMALL_BUFFER_SIZE, false);
 
-		controlResult.set(true);
-		var result1 = transitionExecutor.run(Asyncer.generateType1UUID(), TestAsyncer.STOPPED,
-				TestAsyncer.START,
-				stoppedToStartingAndThenStartedOrStopped, stateSink);
+		final List<Change<TestState>> publishedStates = new ArrayList<>();
+		stateSink.asFlux().subscribe(c -> publishedStates.add(c));
 
+		var result = transitionExecutor.run(Asyncer.generateType1UUID(), transition,
+				stateSink);
+
+		assertTrue(result.getValue());
+		assertEquals(1, result.getStates().size());
+		assertEquals(TestAsyncer.STARTED, result.getStates().get(0));
+
+		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
+			assertEquals(1, publishedStates.size());
+			assertEquals(TestAsyncer.STARTED, publishedStates.get(0).getValue());
+		});
+
+		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
+			assertEquals(1, executedTasks.size());
+		});
+	}
+
+	@ParameterizedTest(name = "{index}: {0}")
+	@MethodSource("transitionExecutors")
+	void shouldChangeToTheNextStateAndRunTasksWithFurtherStateTransitinoWhenFurtherTransitionIsSpecified(String name,
+			TransitionExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transitionExecutor)
+			throws Exception {
+
+		AtomicBoolean controlResult = new AtomicBoolean(false);
+
+		final List<Boolean> executedTasks = new ArrayList<>();
+		List<BiFunction<TestState, TestEvent, Result<Boolean>>> tasks = new ArrayList<>(
+				Arrays.asList(
+						(state, event) -> {
+							executedTasks.add(Boolean.TRUE);
+							return new Result<>(Asyncer.generateType1UUID(),
+									controlResult.get(),
+									TestAsyncer.DONE_1);
+						}));
+
+		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transition = new Transition<>(
+				"Stopped --(START)--> Started + tasks ? Started : Stopped", TestAsyncer.STOPPED, TestAsyncer.START,
+				TestAsyncer.STARTING, tasks, TaskExecutorType.SEQUENTIAL_FAE, null, TestAsyncer.STARTED,
+				TestAsyncer.STOPPED);
+
+		Set<Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>> transitions = new HashSet<>();
+		transitions.add(transition);
+
+		var stateSink1 = Sinks.many().multicast()
+				.<Change<TestState>>onBackpressureBuffer(Queues.SMALL_BUFFER_SIZE, false);
+
+		var stateSink2 = Sinks.many().multicast()
+				.<Change<TestState>>onBackpressureBuffer(Queues.SMALL_BUFFER_SIZE, false);
+
+		final List<Change<TestState>> publishedStates1 = new ArrayList<>();
+		stateSink1.asFlux().subscribe(c -> publishedStates1.add(c));
+
+		final List<Change<TestState>> publishedStates2 = new ArrayList<>();
+		stateSink2.asFlux().subscribe(c -> publishedStates2.add(c));
+
+		controlResult.set(true);
+		var result1 = transitionExecutor.run(Asyncer.generateType1UUID(), transition, stateSink1);
+
+		controlResult.set(false);
+		var result2 = transitionExecutor.run(Asyncer.generateType1UUID(), transition, stateSink2);
+
+		assertTrue(result1.getValue());
 		assertEquals(2, result1.getStates().size());
 		assertEquals(TestAsyncer.STARTING, result1.getStates().get(0));
 		assertEquals(TestAsyncer.STARTED, result1.getStates().get(1));
 
-		controlResult.set(false);
-		var result2 = transitionExecutor.run(Asyncer.generateType1UUID(), TestAsyncer.STOPPED,
-				TestAsyncer.START,
-				stoppedToStartingAndThenStartedOrStopped, stateSink);
+		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
+			assertEquals(2, publishedStates1.size());
+			assertEquals(TestAsyncer.STARTING, publishedStates1.get(0).getValue());
+			assertEquals(TestAsyncer.STARTED, publishedStates1.get(1).getValue());
+		});
 
+		assertTrue(result2.getValue());
 		assertEquals(2, result2.getStates().size());
 		assertEquals(TestAsyncer.STARTING, result2.getStates().get(0));
 		assertEquals(TestAsyncer.STOPPED, result2.getStates().get(1));
+
+		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
+			assertEquals(2, publishedStates2.size());
+			assertEquals(TestAsyncer.STARTING, publishedStates2.get(0).getValue());
+			assertEquals(TestAsyncer.STOPPED, publishedStates2.get(1).getValue());
+		});
+
+		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
+			assertEquals(2, executedTasks.size());
+		});
 	}
 
 }

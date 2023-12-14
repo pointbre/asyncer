@@ -116,7 +116,7 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 				System.out.println("Running");
 				final Transition<S, T, E, F, Boolean> transition = matchingTransition.get();
 				final TransitionResult<S, T, E, F, Boolean> transitionResult = transitionExecutor.run(uuidOfRequest,
-						currentState, eventOfRequest, transition, stateSink);
+						transition, stateSink);
 
 				System.out.println("Returned transition result=" + transitionResult);
 				if (transitionResult.getTaskResults() != null) {

@@ -31,6 +31,7 @@ public non-sealed class ParallelFAETaskExecutorImpl<S extends State<T>, T, E ext
 			@NonNull List<BiFunction<S, E, Result<Boolean>>> tasks,
 			@Nullable Duration timeout) {
 
+		// TODO: What if task is null
 		tasks.stream().forEach(task -> fork(() -> task.apply(state, event)));
 
 		if (timeout == null) {

@@ -21,7 +21,7 @@ public non-sealed class DefaultTransitionExecutorImpl<S extends State<T>, T, E e
 		implements TransitionExecutor<S, T, E, F, Boolean> {
 
 	@Override
-	public TransitionResult<S, T, E, F, Boolean> run(@NonNull UUID uuid, @NonNull S state, @NonNull E event,
+	public TransitionResult<S, T, E, F, Boolean> run(@NonNull UUID uuid,
 			@NonNull Transition<S, T, E, F, Boolean> transition, @NonNull Many<Change<S>> stateSink) {
 
 		List<S> states = new ArrayList<>();
@@ -51,7 +51,7 @@ public non-sealed class DefaultTransitionExecutorImpl<S extends State<T>, T, E e
 			}
 
 			try {
-				taskResults = taskExecutor.run(state, event, transition.getTasks(),
+				taskResults = taskExecutor.run(transition.getFrom(), transition.getEvent(), transition.getTasks(),
 						transition.getTimeout());
 				if (transition.getToWhenProcessed() != null
 						&& transition.getToWhenFailed() != null) {
@@ -77,7 +77,8 @@ public non-sealed class DefaultTransitionExecutorImpl<S extends State<T>, T, E e
 			}
 		}
 
-		return new TransitionResult<>(uuid, Boolean.TRUE, "Successfully executed the transition", event, states,
+		return new TransitionResult<>(uuid, Boolean.TRUE, "Successfully executed the transition", transition.getEvent(),
+				states,
 				transition, taskResults);
 	}
 }

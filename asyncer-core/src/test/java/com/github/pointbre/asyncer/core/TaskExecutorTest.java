@@ -31,6 +31,10 @@ class TaskExecutorTest {
                 Arguments.of("SequentialFAETaskExecutorImpl", new SequentialFAETaskExecutorImpl<>()));
     }
 
+    // TODO: Null test
+    // TODO: Include a case that the task list is not empty but it has a null
+    // element
+
     @ParameterizedTest(name = "{index}: {0}")
     @MethodSource("taskExecutors")
     void shouldContinueToExecuteTasksWhenExceptionOccurs(String name,
@@ -42,7 +46,6 @@ class TaskExecutorTest {
                         },
                         (state, event) -> {
                             try {
-                                // Same with Thread.sleep(100);
                                 Awaitility.await().pollDelay(Duration.ofMillis(100)).until(() -> true);
                             } catch (ConditionTimeoutException e) {
                                 fail(e.getLocalizedMessage());
@@ -85,7 +88,6 @@ class TaskExecutorTest {
                 Arrays.asList(
                         (state, event) -> {
                             try {
-                                // Same with Thread.sleep(100);
                                 Awaitility.await().pollDelay(Duration.ofMillis(100)).until(() -> true);
                             } catch (ConditionTimeoutException e) {
                                 fail(e.getLocalizedMessage());

@@ -175,7 +175,6 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 		public static final String TRANSITION_CURRENT_EVENT_MISMATCH = "The current event and the transition don't match";
 
 		public TransitionResult<S, T, E, F, R> run(@NonNull UUID uuid,
-				@NonNull S state, @NonNull E event,
 				@NonNull Transition<S, T, E, F, R> transition,
 				@NonNull Many<Change<S>> stateSink);
 	}
