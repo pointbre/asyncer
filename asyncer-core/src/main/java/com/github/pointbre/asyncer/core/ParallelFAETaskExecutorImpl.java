@@ -1,10 +1,9 @@
 package com.github.pointbre.asyncer.core;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.StructuredTaskScope;
@@ -17,7 +16,6 @@ import com.github.pointbre.asyncer.core.Asyncer.Result;
 import com.github.pointbre.asyncer.core.Asyncer.State;
 import com.github.pointbre.asyncer.core.Asyncer.TaskExecutor;
 
-import lombok.NonNull;
 import reactor.util.annotation.Nullable;
 
 public non-sealed class ParallelFAETaskExecutorImpl<S extends State<T>, T, E extends Event<F>, F>
@@ -27,12 +25,19 @@ public non-sealed class ParallelFAETaskExecutorImpl<S extends State<T>, T, E ext
 	private final Queue<Result<Boolean>> results = new LinkedTransferQueue<>();
 
 	@Override
-	public List<Result<Boolean>> run(@NonNull S state, @NonNull E event,
-			@NonNull List<BiFunction<S, E, Result<Boolean>>> tasks,
+	public List<Result<Boolean>> run(@Nullable S state, @Nullable E event,
+			@Nullable List<BiFunction<S, E, Result<Boolean>>> tasks,
 			@Nullable Duration timeout) {
 
-		// TODO: What if task is null
-		tasks.stream().forEach(task -> fork(() -> task.apply(state, event)));
+		if (state == null || event == null || tasks == null) {
+			return List.of(new Result<>(Asyncer.generateType1UUID(), Boolean.FALSE,
+					TASK_NULL_PARAMETER + ": state=" + state + ", event=" + event + ", tasks=" + tasks));
+		}
+
+		// Ignore null elements if found
+		final var tasksWithoutNullElement = tasks.stream().filter(Objects::nonNull).collect(Collectors.toList());
+
+		tasksWithoutNullElement.forEach(task -> fork(() -> task.apply(state, event)));
 
 		if (timeout == null) {
 			try {
@@ -52,7 +57,7 @@ public non-sealed class ParallelFAETaskExecutorImpl<S extends State<T>, T, E ext
 		}
 
 		// If any timed out task is found, add the result
-		for (int i = 1; i <= tasks.size() - results.size(); i++) {
+		for (int i = 1; i <= tasksWithoutNullElement.size() - results.size(); i++) {
 			results.add(new Result<>(Asyncer.generateType1UUID(), Boolean.FALSE, TASK_TIMEDOUT));
 		}
 
@@ -71,11 +76,5 @@ public non-sealed class ParallelFAETaskExecutorImpl<S extends State<T>, T, E ext
 		} else {
 			results.add(task.get());
 		}
-	}
-
-	public Class<?> getClassFile() {
-		Type type = getClass().getGenericSuperclass();
-		ParameterizedType paramType = (ParameterizedType) type;
-		return (Class<?>) paramType.getActualTypeArguments()[0];
 	}
 }

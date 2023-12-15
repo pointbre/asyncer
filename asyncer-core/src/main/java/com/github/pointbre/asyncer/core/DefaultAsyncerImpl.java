@@ -26,7 +26,7 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 			One<TransitionResult<S, T, E, F, Boolean>> resultSink) {
 	}
 
-	private final UUID uuid = Asyncer.generateType1UUID();
+	private final UUID asyncerUuid = Asyncer.generateType1UUID();
 
 	@NonNull
 	private final S initialState;
@@ -82,13 +82,15 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 					break;
 				}
 
-				final UUID uuidOfRequest = request.uuid();
+				// FIXME Remove this as it's not needed
+				// final UUID uuidOfRequest = request.uuid();
 				final E eventOfRequest = request.event();
 				One<TransitionResult<S, T, E, F, Boolean>> resultSinkOfRequest = request.resultSink();
 
 				if (finalState != null && currentState.equals(finalState)) {
 					resultSinkOfRequest.tryEmitValue(
-							new TransitionResult<>(uuidOfRequest, Boolean.FALSE, eventOfRequest + " is a final state",
+							new TransitionResult<>(Asyncer.generateType1UUID(), Boolean.FALSE,
+									eventOfRequest + " is a final state",
 									eventOfRequest, null, null, null));
 					continue;
 				}
@@ -98,7 +100,7 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 								&& t.getEvent().getType().equals(eventOfRequest.getType()))
 						.findFirst();
 				if (!matchingTransition.isPresent()) {
-					resultSinkOfRequest.tryEmitValue(new TransitionResult<>(uuidOfRequest, Boolean.FALSE,
+					resultSinkOfRequest.tryEmitValue(new TransitionResult<>(Asyncer.generateType1UUID(), Boolean.FALSE,
 							"No matching transition found from " + currentState + " triggered by " + eventOfRequest,
 							eventOfRequest, null, null, null));
 					continue;
@@ -115,8 +117,8 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 
 				System.out.println("Running");
 				final Transition<S, T, E, F, Boolean> transition = matchingTransition.get();
-				final TransitionResult<S, T, E, F, Boolean> transitionResult = transitionExecutor.run(uuidOfRequest,
-						transition, stateSink);
+				final TransitionResult<S, T, E, F, Boolean> transitionResult = transitionExecutor.run(currentState,
+						eventOfRequest, transition, stateSink);
 
 				System.out.println("Returned transition result=" + transitionResult);
 				if (transitionResult.getTaskResults() != null) {
@@ -145,19 +147,21 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 	}
 
 	@Override
-	public Mono<TransitionResult<S, T, E, F, Boolean>> fire(@NonNull UUID uuid, @NonNull E event) {
+	public Mono<TransitionResult<S, T, E, F, Boolean>> fire(@NonNull E event) {
 
 		final One<TransitionResult<S, T, E, F, Boolean>> resultSink = Sinks.one();
+		final UUID eventUuid = Asyncer.generateType1UUID();
 
 		if (isBeingClosed.get()) {
-			TransitionResult<S, T, E, F, Boolean> transitionResult = new TransitionResult<>(uuid, Boolean.FALSE,
+			TransitionResult<S, T, E, F, Boolean> transitionResult = new TransitionResult<>(eventUuid, Boolean.FALSE,
 					"Failed to fire the event as Asyncer is being closed: " + event, event, null, null, null);
 			resultSink.tryEmitValue(transitionResult);
 		} else {
 			try {
-				requests.put(new Request<>(uuid, event, resultSink));
+				requests.put(new Request<>(eventUuid, event, resultSink));
 			} catch (InterruptedException e) {
-				TransitionResult<S, T, E, F, Boolean> transitionResult = new TransitionResult<>(uuid, Boolean.FALSE,
+				TransitionResult<S, T, E, F, Boolean> transitionResult = new TransitionResult<>(eventUuid,
+						Boolean.FALSE,
 						"Failed to fire the event: " + event, event, null, null, null);
 				resultSink.tryEmitValue(transitionResult);
 				transitionResultSink.tryEmitNext(transitionResult);
@@ -180,7 +184,7 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 
 	@Override
 	public UUID uuid() {
-		return uuid;
+		return asyncerUuid;
 	}
 
 	@Override

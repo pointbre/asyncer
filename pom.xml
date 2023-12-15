@@ -26,8 +26,9 @@
 		<maven.compiler.target>21</maven.compiler.target>
 
 		<reactor.version>2022.0.12</reactor.version>
+		<failsafe.version>3.3.2</failsafe.version>
 		<lombok.version>1.18.30</lombok.version>
-		<javax.annotation.version>1.3.2</javax.annotation.version>
+		<findbugs.version>3.0.2</findbugs.version>
 		<slf4j.version>2.0.9</slf4j.version>
 		<junit5.version>5.10.1</junit5.version>
 		<mockito.version>5.6.0</mockito.version>
@@ -46,6 +47,12 @@
 			</dependency>
 
 			<dependency>
+				<groupId>dev.failsafe</groupId>
+				<artifactId>failsafe</artifactId>
+				<version>${failsafe.version}</version>
+			</dependency>
+
+			<dependency>
 				<groupId>org.projectlombok</groupId>
 				<artifactId>lombok</artifactId>
 				<version>${lombok.version}</version>
@@ -55,7 +62,7 @@
 			<dependency>
 				<groupId>com.google.code.findbugs</groupId>
 				<artifactId>jsr305</artifactId>
-				<version>3.0.2</version>
+				<version>${findbugs.version}</version>
 			</dependency>
 
 			<dependency>
@@ -83,7 +90,7 @@
 			<dependency>
 				<groupId>io.cucumber</groupId>
 				<artifactId>cucumber-bom</artifactId>
-				<version>7.9.0</version>
+				<version>${cucumber.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>

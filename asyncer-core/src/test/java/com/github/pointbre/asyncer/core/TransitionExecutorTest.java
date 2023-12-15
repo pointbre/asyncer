@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
@@ -41,11 +40,9 @@ class TransitionExecutorTest {
 
 	@ParameterizedTest(name = "{index}: {0}")
 	@MethodSource("transitionExecutors")
-	void shouldThrowANPEWhenAnyMandatoryArgumentIsNull(String name,
+	void shouldReturnFailedResultWhenAnyOfParameterIsNull(String name,
 			TransitionExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transitionExecutor)
 			throws Exception {
-
-		UUID uuid = Asyncer.generateType1UUID();
 
 		List<BiFunction<TestState, TestEvent, Result<Boolean>>> tasks = new ArrayList<>(
 				Arrays.asList(
@@ -54,7 +51,8 @@ class TransitionExecutorTest {
 						}));
 
 		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transition = new Transition<>(
-				"Stopped --(START)--> Started | Stopped", TestAsyncer.STOPPED, TestAsyncer.START, TestAsyncer.STARTING,
+				"Stopped --(START)--> Starting + Tasks ? Started : Stopped", TestAsyncer.STOPPED, TestAsyncer.START,
+				TestAsyncer.STARTING,
 				tasks, TaskExecutorType.SEQUENTIAL_FAE, null, TestAsyncer.STARTED, TestAsyncer.STOPPED);
 
 		Set<Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>> transitions = new HashSet<>();
@@ -63,35 +61,10 @@ class TransitionExecutorTest {
 		var stateSink = Sinks.many().multicast()
 				.<Change<TestState>>onBackpressureBuffer(Queues.SMALL_BUFFER_SIZE, false);
 
-		try {
-			transitionExecutor.run(null,
-					transition, stateSink);
-			fail("Should throw a NPE");
-		} catch (NullPointerException e) {
-			//
-		} catch (Exception e) {
-			fail("Should throw a NPE");
-		}
-
-		try {
-			transitionExecutor.run(uuid,
-					null, stateSink);
-			fail("Should throw a NPE");
-		} catch (NullPointerException e) {
-			//
-		} catch (Exception e) {
-			fail("Should throw a NPE");
-		}
-
-		try {
-			transitionExecutor.run(uuid,
-					transition, null);
-			fail("Should throw a NPE");
-		} catch (NullPointerException e) {
-			//
-		} catch (Exception e) {
-			fail("Should throw a NPE");
-		}
+		assertFalse(transitionExecutor.run(null, TestAsyncer.START, transition, stateSink).getValue());
+		assertFalse(transitionExecutor.run(TestAsyncer.STOPPED, null, transition, stateSink).getValue());
+		assertFalse(transitionExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, null, stateSink).getValue());
+		assertFalse(transitionExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, transition, null).getValue());
 	}
 
 	@ParameterizedTest(name = "{index}: {0}")
@@ -113,8 +86,7 @@ class TransitionExecutorTest {
 		final List<Change<TestState>> list = new ArrayList<>();
 		stateSink.asFlux().subscribe(c -> list.add(c));
 
-		var result = transitionExecutor.run(Asyncer.generateType1UUID(), transition,
-				stateSink);
+		var result = transitionExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, transition, stateSink);
 
 		assertTrue(result.getValue());
 		assertEquals(1, result.getStates().size());
@@ -156,8 +128,7 @@ class TransitionExecutorTest {
 		final List<Change<TestState>> publishedStates = new ArrayList<>();
 		stateSink.asFlux().subscribe(c -> publishedStates.add(c));
 
-		var result = transitionExecutor.run(Asyncer.generateType1UUID(), transition,
-				stateSink);
+		var result = transitionExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, transition, stateSink);
 
 		assertTrue(result.getValue());
 		assertEquals(1, result.getStates().size());
@@ -192,7 +163,7 @@ class TransitionExecutorTest {
 						}));
 
 		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transition = new Transition<>(
-				"Stopped --(START)--> Started + tasks ? Started : Stopped", TestAsyncer.STOPPED, TestAsyncer.START,
+				"Stopped --(START)--> Started + Tasks ? Started : Stopped", TestAsyncer.STOPPED, TestAsyncer.START,
 				TestAsyncer.STARTING, tasks, TaskExecutorType.SEQUENTIAL_FAE, null, TestAsyncer.STARTED,
 				TestAsyncer.STOPPED);
 
@@ -212,10 +183,10 @@ class TransitionExecutorTest {
 		stateSink2.asFlux().subscribe(c -> publishedStates2.add(c));
 
 		controlResult.set(true);
-		var result1 = transitionExecutor.run(Asyncer.generateType1UUID(), transition, stateSink1);
+		var result1 = transitionExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, transition, stateSink1);
 
 		controlResult.set(false);
-		var result2 = transitionExecutor.run(Asyncer.generateType1UUID(), transition, stateSink2);
+		var result2 = transitionExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, transition, stateSink2);
 
 		assertTrue(result1.getValue());
 		assertEquals(2, result1.getStates().size());
@@ -243,5 +214,4 @@ class TransitionExecutorTest {
 			assertEquals(2, executedTasks.size());
 		});
 	}
-
 }

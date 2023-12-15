@@ -4,16 +4,17 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.StructuredTaskScope.ShutdownOnSuccess;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 import com.github.pointbre.asyncer.core.Asyncer.Event;
 import com.github.pointbre.asyncer.core.Asyncer.Result;
 import com.github.pointbre.asyncer.core.Asyncer.State;
 import com.github.pointbre.asyncer.core.Asyncer.TaskExecutor;
 
-import lombok.NonNull;
 import reactor.util.annotation.Nullable;
 
 public non-sealed class SequentialFAETaskExecutorImpl<S extends State<T>, T, E extends Event<F>, F>
@@ -23,11 +24,20 @@ public non-sealed class SequentialFAETaskExecutorImpl<S extends State<T>, T, E e
 	private final List<ShutdownOnSuccess<Result<Boolean>>> scopes = new ArrayList<>();
 
 	@Override
-	public List<Result<Boolean>> run(@NonNull S state, @NonNull E event,
-			@NonNull List<BiFunction<S, E, Result<Boolean>>> tasks,
+	public List<Result<Boolean>> run(@Nullable S state, @Nullable E event,
+			@Nullable List<BiFunction<S, E, Result<Boolean>>> tasks,
 			@Nullable Duration timeout) {
 
-		for (BiFunction<S, E, Result<Boolean>> task : tasks) {
+		if (state == null || event == null || tasks == null) {
+			taskResults.add(new Result<>(Asyncer.generateType1UUID(), Boolean.FALSE,
+					TASK_NULL_PARAMETER + ": state=" + state + ", event=" + event + ", tasks=" + tasks));
+			return taskResults;
+		}
+
+		// Ignore null elements if found
+		final var tasksWithoutNullElement = tasks.stream().filter(Objects::nonNull).collect(Collectors.toList());
+
+		for (BiFunction<S, E, Result<Boolean>> task : tasksWithoutNullElement) {
 			try (ShutdownOnSuccess<Result<Boolean>> scope = new ShutdownOnSuccess<>()) {
 
 				scopes.add(scope);

@@ -31,10 +31,6 @@ class TaskExecutorTest {
                 Arguments.of("SequentialFAETaskExecutorImpl", new SequentialFAETaskExecutorImpl<>()));
     }
 
-    // TODO: Null test
-    // TODO: Include a case that the task list is not empty but it has a null
-    // element
-
     @ParameterizedTest(name = "{index}: {0}")
     @MethodSource("taskExecutors")
     void shouldContinueToExecuteTasksWhenExceptionOccurs(String name,
@@ -82,7 +78,29 @@ class TaskExecutorTest {
 
     @ParameterizedTest(name = "{index}: {0}")
     @MethodSource("taskExecutors")
-    void shouldThrowAnNPEWhenEitherStateOrEventIsNull(String name,
+    void shouldReturnNoResultWhenEmptyTaskListIsProvided(String name,
+            TaskExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> taskExecutor) throws Exception {
+        List<BiFunction<TestState, TestEvent, Result<Boolean>>> task = new ArrayList<>(
+                Arrays.asList());
+
+        List<Result<Boolean>> results = taskExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, task, null);
+        assertEquals(0, results.size());
+    }
+
+    @ParameterizedTest(name = "{index}: {0}")
+    @MethodSource("taskExecutors")
+    void shouldReturnNoResultWhenNullTaskIsProvided(String name,
+            TaskExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> taskExecutor) throws Exception {
+        List<BiFunction<TestState, TestEvent, Result<Boolean>>> task = new ArrayList<>(
+                Arrays.asList((BiFunction<TestState, TestEvent, Result<Boolean>>) null));
+
+        List<Result<Boolean>> results = taskExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, task, null);
+        assertEquals(0, results.size());
+    }
+
+    @ParameterizedTest(name = "{index}: {0}")
+    @MethodSource("taskExecutors")
+    void shouldReturnFalseWhenAnyOfParameterIsNull(String name,
             TaskExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> taskExecutor) throws Exception {
         List<BiFunction<TestState, TestEvent, Result<Boolean>>> task = new ArrayList<>(
                 Arrays.asList(
@@ -95,13 +113,8 @@ class TaskExecutorTest {
                             return new Result<>(Asyncer.generateType1UUID(), Boolean.TRUE, TestAsyncer.DONE_1);
                         }));
 
-        try (taskExecutor) {
-            taskExecutor.run(null, null, task, null);
-            fail("Should throw a NPE");
-        } catch (NullPointerException e) {
-            //
-        } catch (Exception e) {
-            fail("Should throw a NPE");
-        }
+        assertFalse(taskExecutor.run(null, TestAsyncer.START, task, null).get(0).getValue());
+        assertFalse(taskExecutor.run(TestAsyncer.STOPPED, null, task, null).get(0).getValue());
+        assertFalse(taskExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, null, null).get(0).getValue());
     }
 }

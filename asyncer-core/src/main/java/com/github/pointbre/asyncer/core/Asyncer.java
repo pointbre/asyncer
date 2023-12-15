@@ -26,7 +26,7 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 
 	Flux<TransitionResult<S, T, E, F, R>> transition();
 
-	Mono<TransitionResult<S, T, E, F, R>> fire(@NonNull UUID uuid, @NonNull E event);
+	Mono<TransitionResult<S, T, E, F, R>> fire(@NonNull E event);
 
 	@Value
 	@NonFinal
@@ -145,7 +145,7 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 	@EqualsAndHashCode(callSuper = true)
 	public class TransitionResult<S extends State<T>, T, E extends Event<F>, F, R> extends Result<R> {
 
-		@NonNull
+		@Nullable
 		E event;
 
 		@Nullable
@@ -157,7 +157,7 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 		@Nullable
 		List<Result<R>> taskResults;
 
-		public TransitionResult(@NonNull UUID uuid, @NonNull R value, @NonNull String description, @NonNull E event,
+		public TransitionResult(@NonNull UUID uuid, @NonNull R value, @NonNull String description, @Nullable E event,
 				@Nullable List<S> states, @Nullable Transition<S, T, E, F, R> transition,
 				@Nullable List<Result<R>> taskResults) {
 			super(uuid, value, description);
@@ -171,12 +171,13 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 	public sealed interface TransitionExecutor<S extends State<T>, T, E extends Event<F>, F, R>
 			permits DefaultTransitionExecutorImpl {
 
-		public static final String TRANSITION_CURRENT_STATE_MISMATCH = "The current state and the transition don't match";
-		public static final String TRANSITION_CURRENT_EVENT_MISMATCH = "The current event and the transition don't match";
+		public static final String TRANSITION_NULL_PARAMETER = "The provided parameters shouldn't be null";
+		public static final String TRANSITION_CURRENT_STATE_MISMATCH = "The current state and the transition doesn't match";
+		public static final String TRANSITION_CURRENT_EVENT_MISMATCH = "The current event and the transition doesn't match";
+		public static final String TRANSITION_SUCCESSFULLY_DONE = "Successfully executed the transition";
 
-		public TransitionResult<S, T, E, F, R> run(@NonNull UUID uuid,
-				@NonNull Transition<S, T, E, F, R> transition,
-				@NonNull Many<Change<S>> stateSink);
+		public TransitionResult<S, T, E, F, R> run(@Nullable S state, @Nullable E event,
+				@Nullable Transition<S, T, E, F, R> transition, @Nullable Many<Change<S>> stateSink);
 	}
 
 	public enum TaskExecutorType {
@@ -187,13 +188,14 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 			extends AutoCloseable
 			permits ParallelFAETaskExecutorImpl, SequentialFAETaskExecutorImpl {
 
+		public static final String TASK_NULL_PARAMETER = "The provided parameters shouldn't be null";
 		public static final String TASK_TIMEDOUT = "Timed out";
 		public static final String TASK_EXCEPTION = "Exception occurred";
 		public static final String TASK_NOT_COMPLETED = "Not completed after forked";
 		public static final String TASK_NULL_RESULT = "Null result is returned";
 
-		public List<Result<R>> run(@NonNull S state, @NonNull E event,
-				@NonNull List<BiFunction<S, E, Result<R>>> tasks,
+		public List<Result<R>> run(@Nullable S state, @Nullable E event,
+				@Nullable List<BiFunction<S, E, Result<R>>> tasks,
 				@Nullable Duration timeout);
 	}
 
