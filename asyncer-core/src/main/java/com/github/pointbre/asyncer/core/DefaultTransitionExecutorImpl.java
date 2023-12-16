@@ -11,7 +11,6 @@ import com.github.pointbre.asyncer.core.Asyncer.Event;
 import com.github.pointbre.asyncer.core.Asyncer.Result;
 import com.github.pointbre.asyncer.core.Asyncer.State;
 import com.github.pointbre.asyncer.core.Asyncer.TaskExecutor;
-import com.github.pointbre.asyncer.core.Asyncer.TaskExecutorType;
 import com.github.pointbre.asyncer.core.Asyncer.Transition;
 import com.github.pointbre.asyncer.core.Asyncer.TransitionExecutor;
 import com.github.pointbre.asyncer.core.Asyncer.TransitionResult;
@@ -91,7 +90,7 @@ public non-sealed class DefaultTransitionExecutorImpl<S extends State<T>, T, E e
 	private TaskExecutor<S, T, E, F, Boolean> getTaskExecutor(Transition<S, T, E, F, Boolean> transition) {
 
 		final TaskExecutor<S, T, E, F, Boolean> taskExecutor;
-		if (transition.getTaskExecutorType().equals(TaskExecutorType.PARALLEL_FAE)) {
+		if (transition.getTaskExecutorType().equals(TaskExecutor.Type.PARALLEL_FAE)) {
 			taskExecutor = new ParallelFAETaskExecutorImpl<>();
 		} else {
 			taskExecutor = new SequentialFAETaskExecutorImpl<>();

@@ -22,7 +22,7 @@ import reactor.util.concurrent.Queues;
 
 public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> implements Asyncer<S, T, E, F, Boolean> {
 
-	public record Request<S extends State<T>, T, E extends Event<F>, F>(UUID uuid, E event,
+	public record Request<S extends State<T>, T, E extends Event<F>, F>(E event,
 			One<TransitionResult<S, T, E, F, Boolean>> resultSink) {
 	}
 
@@ -42,7 +42,7 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 
 	private final BlockingQueue<Request<S, T, E, F>> requests = new LinkedBlockingQueue<>();
 	private final Thread transitionHandler;
-	private final Request<S, T, E, F> POISON_PILL = new Request<>(null, null, null);
+	private final Request<S, T, E, F> POISON_PILL = new Request<>(null, null);
 	private final AtomicBoolean isBeingClosed = new AtomicBoolean(false);
 
 	private final Many<Change<S>> stateSink = Sinks.many().multicast()
@@ -53,9 +53,23 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 			.<TransitionResult<S, T, E, F, Boolean>>onBackpressureBuffer(Queues.SMALL_BUFFER_SIZE,
 					false);
 
-	public DefaultAsyncerImpl(@NonNull S initialState, @Nullable S finalState,
-			@NonNull Set<Transition<S, T, E, F, Boolean>> transitions,
-			@NonNull TransitionExecutor<S, T, E, F, Boolean> transitionExecutor) {
+	public DefaultAsyncerImpl(
+			@Nullable S initialState, @Nullable S finalState,
+			@Nullable Set<Transition<S, T, E, F, Boolean>> transitions,
+			@Nullable TransitionExecutor<S, T, E, F, Boolean> transitionExecutor) throws AsyncerException {
+
+		if (initialState == null) {
+			throw new AsyncerException("The initialState shouldn't be null");
+		}
+		if (finalState != null && finalState.equals(initialState)) {
+			throw new AsyncerException("The finalState shouldn't be same with initialState");
+		}
+		if (transitions == null) {
+			throw new AsyncerException("The transitions shouldn't be null");
+		}
+		if (transitionExecutor == null) {
+			throw new AsyncerException("The transitionExecutor shouldn't be null");
+		}
 
 		this.initialState = initialState;
 		this.finalState = finalState;
@@ -71,7 +85,6 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 				try {
 					request = requests.take();
 				} catch (InterruptedException e) {
-					System.out.println("While waiting for a new request, interrupted");
 					break;
 				}
 
@@ -115,12 +128,10 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 				// continue;
 				// }
 
-				System.out.println("Running");
 				final Transition<S, T, E, F, Boolean> transition = matchingTransition.get();
 				final TransitionResult<S, T, E, F, Boolean> transitionResult = transitionExecutor.run(currentState,
 						eventOfRequest, transition, stateSink);
 
-				System.out.println("Returned transition result=" + transitionResult);
 				if (transitionResult.getTaskResults() != null) {
 					transitionResult.getTaskResults().forEach(r -> System.out.println("task result=" + r));
 				}
@@ -136,7 +147,6 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 						currentState = s;
 					});
 				}
-				System.out.println("Processing done: " + transitionResult);
 
 			}
 		});
@@ -147,22 +157,22 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 	}
 
 	@Override
-	public Mono<TransitionResult<S, T, E, F, Boolean>> fire(@NonNull E event) {
+	public Mono<TransitionResult<S, T, E, F, Boolean>> fire(E event) {
 
 		final One<TransitionResult<S, T, E, F, Boolean>> resultSink = Sinks.one();
-		final UUID eventUuid = Asyncer.generateType1UUID();
 
 		if (isBeingClosed.get()) {
-			TransitionResult<S, T, E, F, Boolean> transitionResult = new TransitionResult<>(eventUuid, Boolean.FALSE,
-					"Failed to fire the event as Asyncer is being closed: " + event, event, null, null, null);
+			TransitionResult<S, T, E, F, Boolean> transitionResult = new TransitionResult<>(Asyncer.generateType1UUID(),
+					Boolean.FALSE, "Failed to fire the event as Asyncer is being closed: " + event, event, null, null,
+					null);
 			resultSink.tryEmitValue(transitionResult);
 		} else {
 			try {
-				requests.put(new Request<>(eventUuid, event, resultSink));
+				requests.put(new Request<>(event, resultSink));
 			} catch (InterruptedException e) {
-				TransitionResult<S, T, E, F, Boolean> transitionResult = new TransitionResult<>(eventUuid,
-						Boolean.FALSE,
-						"Failed to fire the event: " + event, event, null, null, null);
+				TransitionResult<S, T, E, F, Boolean> transitionResult = new TransitionResult<>(
+						Asyncer.generateType1UUID(), Boolean.FALSE, "Failed to fire the event: " + event, event, null,
+						null, null);
 				resultSink.tryEmitValue(transitionResult);
 				transitionResultSink.tryEmitNext(transitionResult);
 			}

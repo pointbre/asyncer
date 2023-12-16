@@ -21,7 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.github.pointbre.asyncer.core.Asyncer.Change;
 import com.github.pointbre.asyncer.core.Asyncer.Result;
-import com.github.pointbre.asyncer.core.Asyncer.TaskExecutorType;
+import com.github.pointbre.asyncer.core.Asyncer.TaskExecutor;
 import com.github.pointbre.asyncer.core.Asyncer.Transition;
 import com.github.pointbre.asyncer.core.Asyncer.TransitionExecutor;
 import com.github.pointbre.asyncer.core.TestAsyncer.TestEvent;
@@ -51,9 +51,9 @@ class TransitionExecutorTest {
 						}));
 
 		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transition = new Transition<>(
-				"Stopped --(START)--> Starting + Tasks ? Started : Stopped", TestAsyncer.STOPPED, TestAsyncer.START,
+				"Stopped --(Start)--> Starting + Tasks ? Started : Stopped", TestAsyncer.STOPPED, TestAsyncer.START,
 				TestAsyncer.STARTING,
-				tasks, TaskExecutorType.SEQUENTIAL_FAE, null, TestAsyncer.STARTED, TestAsyncer.STOPPED);
+				tasks, TaskExecutor.Type.SEQUENTIAL_FAE, null, TestAsyncer.STARTED, TestAsyncer.STOPPED);
 
 		Set<Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>> transitions = new HashSet<>();
 		transitions.add(transition);
@@ -74,7 +74,7 @@ class TransitionExecutorTest {
 			throws Exception {
 
 		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transition = new Transition<>(
-				"Stopped --(START)--> Started", TestAsyncer.STOPPED, TestAsyncer.START,
+				"Stopped --(Start)--> Started", TestAsyncer.STOPPED, TestAsyncer.START,
 				TestAsyncer.STARTED, null, null, null, null, null);
 
 		Set<Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>> transitions = new HashSet<>();
@@ -116,8 +116,8 @@ class TransitionExecutorTest {
 						}));
 
 		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transition = new Transition<>(
-				"Stopped --(START)--> Started + tasks", TestAsyncer.STOPPED, TestAsyncer.START,
-				TestAsyncer.STARTED, tasks, TaskExecutorType.SEQUENTIAL_FAE, null, null, null);
+				"Stopped --(Start)--> Started + Tasks", TestAsyncer.STOPPED, TestAsyncer.START,
+				TestAsyncer.STARTED, tasks, TaskExecutor.Type.SEQUENTIAL_FAE, null, null, null);
 
 		Set<Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>> transitions = new HashSet<>();
 		transitions.add(transition);
@@ -146,6 +146,50 @@ class TransitionExecutorTest {
 
 	@ParameterizedTest(name = "{index}: {0}")
 	@MethodSource("transitionExecutors")
+	void shouldRunTasksWithoutStateTransitinoWhenNoStateTransitionIsSpecified(
+			String name,
+			TransitionExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transitionExecutor)
+			throws Exception {
+
+		final List<Boolean> executedTasks = new ArrayList<>();
+		List<BiFunction<TestState, TestEvent, Result<Boolean>>> tasks = new ArrayList<>(
+				Arrays.asList(
+						(state, event) -> {
+							executedTasks.add(Boolean.TRUE);
+							return new Result<>(Asyncer.generateType1UUID(),
+									Boolean.TRUE,
+									TestAsyncer.DONE_1);
+						}));
+
+		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transition = new Transition<>(
+				"Stopped --(Start)--> Tasks", TestAsyncer.STOPPED, TestAsyncer.START,
+				null, tasks, TaskExecutor.Type.SEQUENTIAL_FAE, null, null, null);
+
+		Set<Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>> transitions = new HashSet<>();
+		transitions.add(transition);
+
+		var stateSink = Sinks.many().multicast()
+				.<Change<TestState>>onBackpressureBuffer(Queues.SMALL_BUFFER_SIZE, false);
+
+		final List<Change<TestState>> publishedStates = new ArrayList<>();
+		stateSink.asFlux().subscribe(c -> publishedStates.add(c));
+
+		var result = transitionExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, transition, stateSink);
+
+		assertTrue(result.getValue());
+		assertEquals(0, result.getStates().size());
+
+		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
+			assertEquals(0, publishedStates.size());
+		});
+
+		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
+			assertEquals(1, executedTasks.size());
+		});
+	}
+
+	@ParameterizedTest(name = "{index}: {0}")
+	@MethodSource("transitionExecutors")
 	void shouldChangeToTheNextStateAndRunTasksWithFurtherStateTransitinoWhenFurtherTransitionIsSpecified(String name,
 			TransitionExecutor<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transitionExecutor)
 			throws Exception {
@@ -163,8 +207,8 @@ class TransitionExecutorTest {
 						}));
 
 		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transition = new Transition<>(
-				"Stopped --(START)--> Started + Tasks ? Started : Stopped", TestAsyncer.STOPPED, TestAsyncer.START,
-				TestAsyncer.STARTING, tasks, TaskExecutorType.SEQUENTIAL_FAE, null, TestAsyncer.STARTED,
+				"Stopped --(Start)--> Starting + Tasks ? Started : Stopped", TestAsyncer.STOPPED, TestAsyncer.START,
+				TestAsyncer.STARTING, tasks, TaskExecutor.Type.SEQUENTIAL_FAE, null, TestAsyncer.STARTED,
 				TestAsyncer.STOPPED);
 
 		Set<Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>> transitions = new HashSet<>();

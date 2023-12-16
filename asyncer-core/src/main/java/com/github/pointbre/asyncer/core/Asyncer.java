@@ -26,7 +26,7 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 
 	Flux<TransitionResult<S, T, E, F, R>> transition();
 
-	Mono<TransitionResult<S, T, E, F, R>> fire(@NonNull E event);
+	Mono<TransitionResult<S, T, E, F, R>> fire(E event);
 
 	@Value
 	@NonFinal
@@ -91,6 +91,18 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 	}
 
 	@Value
+	@EqualsAndHashCode(callSuper = true)
+	public class AsyncerException extends Exception {
+		public AsyncerException(String message) {
+			super(message);
+		}
+
+		public AsyncerException(String message, Throwable throwable) {
+			super(message, throwable);
+		}
+	}
+
+	@Value
 	public class Transition<S extends State<T>, T, E extends Event<F>, F, R> {
 
 		@NonNull
@@ -109,7 +121,7 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 		List<BiFunction<S, E, Result<R>>> tasks;
 
 		@Nullable
-		TaskExecutorType taskExecutorType;
+		TaskExecutor.Type taskExecutorType;
 
 		@Nullable
 		Duration timeout;
@@ -180,13 +192,13 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 				@Nullable Transition<S, T, E, F, R> transition, @Nullable Many<Change<S>> stateSink);
 	}
 
-	public enum TaskExecutorType {
-		PARALLEL_FAE, SEQUENTIAL_FAE;
-	}
-
 	public sealed interface TaskExecutor<S extends State<T>, T, E extends Event<F>, F, R>
 			extends AutoCloseable
 			permits ParallelFAETaskExecutorImpl, SequentialFAETaskExecutorImpl {
+
+		enum Type {
+			PARALLEL_FAE, SEQUENTIAL_FAE;
+		}
 
 		public static final String TASK_NULL_PARAMETER = "The provided parameters shouldn't be null";
 		public static final String TASK_TIMEDOUT = "Timed out";
