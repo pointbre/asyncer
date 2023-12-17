@@ -19,8 +19,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.github.pointbre.asyncer.core.Asyncer.Result;
 import com.github.pointbre.asyncer.core.Asyncer.TaskExecutor;
-import com.github.pointbre.asyncer.core.TestAsyncer.TestEvent;
-import com.github.pointbre.asyncer.core.TestAsyncer.TestState;
+import com.github.pointbre.asyncer.core.TestCommon.TestEvent;
+import com.github.pointbre.asyncer.core.TestCommon.TestState;
 
 @ExtendWith(MockitoExtension.class)
 class TaskExecutorTest {
@@ -46,17 +46,17 @@ class TaskExecutorTest {
                             } catch (ConditionTimeoutException e) {
                                 fail(e.getLocalizedMessage());
                             }
-                            return new Result<>(Asyncer.generateType1UUID(), Boolean.TRUE, TestAsyncer.DONE_1);
+                            return new Result<>(Asyncer.generateType1UUID(), Boolean.TRUE, TestCommon.DONE_1);
                         }));
 
         try (taskExecutor) {
-            List<Result<Boolean>> results = taskExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, task1, null);
+            List<Result<Boolean>> results = taskExecutor.run(TestCommon.STOPPED, TestCommon.START, task1, null);
 
             assertEquals(2, results.size());
             assertFalse(results.get(0).getValue());
             assertTrue(results.get(0).getDescription().startsWith(TaskExecutor.TASK_EXCEPTION));
             assertTrue(results.get(1).getValue());
-            assertTrue(results.get(1).getDescription().startsWith(TestAsyncer.DONE_1));
+            assertTrue(results.get(1).getDescription().startsWith(TestCommon.DONE_1));
         }
     }
 
@@ -70,7 +70,7 @@ class TaskExecutorTest {
                             return null;
                         }));
 
-        List<Result<Boolean>> results = taskExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, task, null);
+        List<Result<Boolean>> results = taskExecutor.run(TestCommon.STOPPED, TestCommon.START, task, null);
         assertEquals(1, results.size());
         assertFalse(results.get(0).getValue());
         assertTrue(results.get(0).getDescription().startsWith(TaskExecutor.TASK_NULL_RESULT));
@@ -83,7 +83,7 @@ class TaskExecutorTest {
         List<BiFunction<TestState, TestEvent, Result<Boolean>>> task = new ArrayList<>(
                 Arrays.asList());
 
-        List<Result<Boolean>> results = taskExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, task, null);
+        List<Result<Boolean>> results = taskExecutor.run(TestCommon.STOPPED, TestCommon.START, task, null);
         assertEquals(0, results.size());
     }
 
@@ -94,7 +94,7 @@ class TaskExecutorTest {
         List<BiFunction<TestState, TestEvent, Result<Boolean>>> task = new ArrayList<>(
                 Arrays.asList((BiFunction<TestState, TestEvent, Result<Boolean>>) null));
 
-        List<Result<Boolean>> results = taskExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, task, null);
+        List<Result<Boolean>> results = taskExecutor.run(TestCommon.STOPPED, TestCommon.START, task, null);
         assertEquals(0, results.size());
     }
 
@@ -110,11 +110,11 @@ class TaskExecutorTest {
                             } catch (ConditionTimeoutException e) {
                                 fail(e.getLocalizedMessage());
                             }
-                            return new Result<>(Asyncer.generateType1UUID(), Boolean.TRUE, TestAsyncer.DONE_1);
+                            return new Result<>(Asyncer.generateType1UUID(), Boolean.TRUE, TestCommon.DONE_1);
                         }));
 
-        assertFalse(taskExecutor.run(null, TestAsyncer.START, task, null).get(0).getValue());
-        assertFalse(taskExecutor.run(TestAsyncer.STOPPED, null, task, null).get(0).getValue());
-        assertFalse(taskExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, null, null).get(0).getValue());
+        assertFalse(taskExecutor.run(null, TestCommon.START, task, null).get(0).getValue());
+        assertFalse(taskExecutor.run(TestCommon.STOPPED, null, task, null).get(0).getValue());
+        assertFalse(taskExecutor.run(TestCommon.STOPPED, TestCommon.START, null, null).get(0).getValue());
     }
 }

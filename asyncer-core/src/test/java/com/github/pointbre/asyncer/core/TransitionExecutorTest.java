@@ -24,8 +24,8 @@ import com.github.pointbre.asyncer.core.Asyncer.Result;
 import com.github.pointbre.asyncer.core.Asyncer.TaskExecutor;
 import com.github.pointbre.asyncer.core.Asyncer.Transition;
 import com.github.pointbre.asyncer.core.Asyncer.TransitionExecutor;
-import com.github.pointbre.asyncer.core.TestAsyncer.TestEvent;
-import com.github.pointbre.asyncer.core.TestAsyncer.TestState;
+import com.github.pointbre.asyncer.core.TestCommon.TestEvent;
+import com.github.pointbre.asyncer.core.TestCommon.TestState;
 
 import reactor.core.publisher.Sinks;
 import reactor.util.concurrent.Queues;
@@ -47,13 +47,13 @@ class TransitionExecutorTest {
 		List<BiFunction<TestState, TestEvent, Result<Boolean>>> tasks = new ArrayList<>(
 				Arrays.asList(
 						(state, event) -> {
-							return new Result<>(Asyncer.generateType1UUID(), Boolean.TRUE, TestAsyncer.DONE_1);
+							return new Result<>(Asyncer.generateType1UUID(), Boolean.TRUE, TestCommon.DONE_1);
 						}));
 
 		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transition = new Transition<>(
-				"Stopped --(Start)--> Starting + Tasks ? Started : Stopped", TestAsyncer.STOPPED, TestAsyncer.START,
-				TestAsyncer.STARTING,
-				tasks, TaskExecutor.Type.SEQUENTIAL_FAE, null, TestAsyncer.STARTED, TestAsyncer.STOPPED);
+				"Stopped --(Start)--> Starting + Tasks ? Started : Stopped", TestCommon.STOPPED, TestCommon.START,
+				TestCommon.STARTING,
+				tasks, TaskExecutor.Type.SEQUENTIAL_FAE, null, TestCommon.STARTED, TestCommon.STOPPED);
 
 		Set<Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>> transitions = new HashSet<>();
 		transitions.add(transition);
@@ -61,10 +61,10 @@ class TransitionExecutorTest {
 		var stateSink = Sinks.many().multicast()
 				.<Change<TestState>>onBackpressureBuffer(Queues.SMALL_BUFFER_SIZE, false);
 
-		assertFalse(transitionExecutor.run(null, TestAsyncer.START, transition, stateSink).getValue());
-		assertFalse(transitionExecutor.run(TestAsyncer.STOPPED, null, transition, stateSink).getValue());
-		assertFalse(transitionExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, null, stateSink).getValue());
-		assertFalse(transitionExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, transition, null).getValue());
+		assertFalse(transitionExecutor.run(null, TestCommon.START, transition, stateSink).getValue());
+		assertFalse(transitionExecutor.run(TestCommon.STOPPED, null, transition, stateSink).getValue());
+		assertFalse(transitionExecutor.run(TestCommon.STOPPED, TestCommon.START, null, stateSink).getValue());
+		assertFalse(transitionExecutor.run(TestCommon.STOPPED, TestCommon.START, transition, null).getValue());
 	}
 
 	@ParameterizedTest(name = "{index}: {0}")
@@ -74,8 +74,8 @@ class TransitionExecutorTest {
 			throws Exception {
 
 		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transition = new Transition<>(
-				"Stopped --(Start)--> Started", TestAsyncer.STOPPED, TestAsyncer.START,
-				TestAsyncer.STARTED, null, null, null, null, null);
+				"Stopped --(Start)--> Started", TestCommon.STOPPED, TestCommon.START,
+				TestCommon.STARTED, null, null, null, null, null);
 
 		Set<Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>> transitions = new HashSet<>();
 		transitions.add(transition);
@@ -86,15 +86,15 @@ class TransitionExecutorTest {
 		final List<Change<TestState>> list = new ArrayList<>();
 		stateSink.asFlux().subscribe(c -> list.add(c));
 
-		var result = transitionExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, transition, stateSink);
+		var result = transitionExecutor.run(TestCommon.STOPPED, TestCommon.START, transition, stateSink);
 
 		assertTrue(result.getValue());
 		assertEquals(1, result.getStates().size());
-		assertEquals(TestAsyncer.STARTED, result.getStates().get(0));
+		assertEquals(TestCommon.STARTED, result.getStates().get(0));
 
 		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
 			assertEquals(1, list.size());
-			assertEquals(TestAsyncer.STARTED, list.get(0).getValue());
+			assertEquals(TestCommon.STARTED, list.get(0).getValue());
 		});
 	}
 
@@ -112,12 +112,12 @@ class TransitionExecutorTest {
 							executedTasks.add(Boolean.TRUE);
 							return new Result<>(Asyncer.generateType1UUID(),
 									Boolean.TRUE,
-									TestAsyncer.DONE_1);
+									TestCommon.DONE_1);
 						}));
 
 		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transition = new Transition<>(
-				"Stopped --(Start)--> Started + Tasks", TestAsyncer.STOPPED, TestAsyncer.START,
-				TestAsyncer.STARTED, tasks, TaskExecutor.Type.SEQUENTIAL_FAE, null, null, null);
+				"Stopped --(Start)--> Started + Tasks", TestCommon.STOPPED, TestCommon.START,
+				TestCommon.STARTED, tasks, TaskExecutor.Type.SEQUENTIAL_FAE, null, null, null);
 
 		Set<Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>> transitions = new HashSet<>();
 		transitions.add(transition);
@@ -128,15 +128,15 @@ class TransitionExecutorTest {
 		final List<Change<TestState>> publishedStates = new ArrayList<>();
 		stateSink.asFlux().subscribe(c -> publishedStates.add(c));
 
-		var result = transitionExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, transition, stateSink);
+		var result = transitionExecutor.run(TestCommon.STOPPED, TestCommon.START, transition, stateSink);
 
 		assertTrue(result.getValue());
 		assertEquals(1, result.getStates().size());
-		assertEquals(TestAsyncer.STARTED, result.getStates().get(0));
+		assertEquals(TestCommon.STARTED, result.getStates().get(0));
 
 		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
 			assertEquals(1, publishedStates.size());
-			assertEquals(TestAsyncer.STARTED, publishedStates.get(0).getValue());
+			assertEquals(TestCommon.STARTED, publishedStates.get(0).getValue());
 		});
 
 		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -158,11 +158,11 @@ class TransitionExecutorTest {
 							executedTasks.add(Boolean.TRUE);
 							return new Result<>(Asyncer.generateType1UUID(),
 									Boolean.TRUE,
-									TestAsyncer.DONE_1);
+									TestCommon.DONE_1);
 						}));
 
 		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transition = new Transition<>(
-				"Stopped --(Start)--> Tasks", TestAsyncer.STOPPED, TestAsyncer.START,
+				"Stopped --(Start)--> Tasks", TestCommon.STOPPED, TestCommon.START,
 				null, tasks, TaskExecutor.Type.SEQUENTIAL_FAE, null, null, null);
 
 		Set<Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>> transitions = new HashSet<>();
@@ -174,7 +174,7 @@ class TransitionExecutorTest {
 		final List<Change<TestState>> publishedStates = new ArrayList<>();
 		stateSink.asFlux().subscribe(c -> publishedStates.add(c));
 
-		var result = transitionExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, transition, stateSink);
+		var result = transitionExecutor.run(TestCommon.STOPPED, TestCommon.START, transition, stateSink);
 
 		assertTrue(result.getValue());
 		assertEquals(0, result.getStates().size());
@@ -203,13 +203,13 @@ class TransitionExecutorTest {
 							executedTasks.add(Boolean.TRUE);
 							return new Result<>(Asyncer.generateType1UUID(),
 									controlResult.get(),
-									TestAsyncer.DONE_1);
+									TestCommon.DONE_1);
 						}));
 
 		Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transition = new Transition<>(
-				"Stopped --(Start)--> Starting + Tasks ? Started : Stopped", TestAsyncer.STOPPED, TestAsyncer.START,
-				TestAsyncer.STARTING, tasks, TaskExecutor.Type.SEQUENTIAL_FAE, null, TestAsyncer.STARTED,
-				TestAsyncer.STOPPED);
+				"Stopped --(Start)--> Starting + Tasks ? Started : Stopped", TestCommon.STOPPED, TestCommon.START,
+				TestCommon.STARTING, tasks, TaskExecutor.Type.SEQUENTIAL_FAE, null, TestCommon.STARTED,
+				TestCommon.STOPPED);
 
 		Set<Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>> transitions = new HashSet<>();
 		transitions.add(transition);
@@ -227,31 +227,31 @@ class TransitionExecutorTest {
 		stateSink2.asFlux().subscribe(c -> publishedStates2.add(c));
 
 		controlResult.set(true);
-		var result1 = transitionExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, transition, stateSink1);
+		var result1 = transitionExecutor.run(TestCommon.STOPPED, TestCommon.START, transition, stateSink1);
 
 		controlResult.set(false);
-		var result2 = transitionExecutor.run(TestAsyncer.STOPPED, TestAsyncer.START, transition, stateSink2);
+		var result2 = transitionExecutor.run(TestCommon.STOPPED, TestCommon.START, transition, stateSink2);
 
 		assertTrue(result1.getValue());
 		assertEquals(2, result1.getStates().size());
-		assertEquals(TestAsyncer.STARTING, result1.getStates().get(0));
-		assertEquals(TestAsyncer.STARTED, result1.getStates().get(1));
+		assertEquals(TestCommon.STARTING, result1.getStates().get(0));
+		assertEquals(TestCommon.STARTED, result1.getStates().get(1));
 
 		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
 			assertEquals(2, publishedStates1.size());
-			assertEquals(TestAsyncer.STARTING, publishedStates1.get(0).getValue());
-			assertEquals(TestAsyncer.STARTED, publishedStates1.get(1).getValue());
+			assertEquals(TestCommon.STARTING, publishedStates1.get(0).getValue());
+			assertEquals(TestCommon.STARTED, publishedStates1.get(1).getValue());
 		});
 
 		assertTrue(result2.getValue());
 		assertEquals(2, result2.getStates().size());
-		assertEquals(TestAsyncer.STARTING, result2.getStates().get(0));
-		assertEquals(TestAsyncer.STOPPED, result2.getStates().get(1));
+		assertEquals(TestCommon.STARTING, result2.getStates().get(0));
+		assertEquals(TestCommon.STOPPED, result2.getStates().get(1));
 
 		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
 			assertEquals(2, publishedStates2.size());
-			assertEquals(TestAsyncer.STARTING, publishedStates2.get(0).getValue());
-			assertEquals(TestAsyncer.STOPPED, publishedStates2.get(1).getValue());
+			assertEquals(TestCommon.STARTING, publishedStates2.get(0).getValue());
+			assertEquals(TestCommon.STOPPED, publishedStates2.get(1).getValue());
 		});
 
 		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {

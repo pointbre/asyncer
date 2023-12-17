@@ -94,5 +94,4 @@ public non-sealed class SequentialFAETaskExecutorImpl<S extends State<T>, T, E e
 			}
 		});
 	}
-
 }

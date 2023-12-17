@@ -60,7 +60,7 @@ public non-sealed class DefaultTransitionExecutorImpl<S extends State<T>, T, E e
 			final TaskExecutor<S, T, E, F, Boolean> taskExecutor = getTaskExecutor(transition);
 
 			try {
-				taskResults = taskExecutor.run(transition.getFrom(), transition.getEvent(), tasksWithoutNullElement,
+				taskResults = taskExecutor.run(state, event, tasksWithoutNullElement,
 						transition.getTimeout());
 				if (transition.getToWhenProcessed() != null && transition.getToWhenFailed() != null) {
 					final S secondState;
@@ -84,7 +84,7 @@ public non-sealed class DefaultTransitionExecutorImpl<S extends State<T>, T, E e
 		}
 
 		return new TransitionResult<>(Asyncer.generateType1UUID(), Boolean.TRUE, TRANSITION_SUCCESSFULLY_DONE,
-				transition.getEvent(), states, transition, taskResults);
+				event, states, transition, taskResults);
 	}
 
 	private TaskExecutor<S, T, E, F, Boolean> getTaskExecutor(Transition<S, T, E, F, Boolean> transition) {

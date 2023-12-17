@@ -16,7 +16,9 @@ import com.github.pointbre.asyncer.core.Asyncer.State;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 
-public class TestAsyncer {
+public class TestCommon {
+
+    public static final int MAX_WAIT = 2;
 
     public static final TestState STARTING = new TestState(TestState.Type.STARTING);
     public static final TestState STARTED = new TestState(TestState.Type.STARTED);

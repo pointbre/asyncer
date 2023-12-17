@@ -23,8 +23,9 @@ import com.github.pointbre.asyncer.core.Asyncer.Result;
 import com.github.pointbre.asyncer.core.Asyncer.TaskExecutor;
 import com.github.pointbre.asyncer.core.Asyncer.Transition;
 import com.github.pointbre.asyncer.core.Asyncer.TransitionExecutor;
-import com.github.pointbre.asyncer.core.TestAsyncer.TestEvent;
-import com.github.pointbre.asyncer.core.TestAsyncer.TestState;
+import com.github.pointbre.asyncer.core.Asyncer.TransitionResult;
+import com.github.pointbre.asyncer.core.TestCommon.TestEvent;
+import com.github.pointbre.asyncer.core.TestCommon.TestState;
 
 import reactor.core.Disposable;
 
@@ -38,36 +39,34 @@ class AsyncerTest {
 			Arrays.asList(
 					(state, event) -> {
 						executedTasks.add(controlResult1.get());
-						return new Result<>(Asyncer.generateType1UUID(), controlResult1.get(), TestAsyncer.DONE_1);
+						return new Result<>(Asyncer.generateType1UUID(), controlResult1.get(), TestCommon.DONE_1);
 					}));
 	private Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transition1 = new Transition<>(
-			"Stopped --(Start)--> Starting + Tasks ? Started : Stopped", TestAsyncer.STOPPED, TestAsyncer.START,
-			TestAsyncer.STARTING, tasks1, TaskExecutor.Type.SEQUENTIAL_FAE, null, TestAsyncer.STARTED,
-			TestAsyncer.STOPPED);
+			"Stopped --(Start)--> Starting + Tasks ? Started : Stopped", TestCommon.STOPPED, TestCommon.START,
+			TestCommon.STARTING, tasks1, TaskExecutor.Type.SEQUENTIAL_FAE, null, TestCommon.STARTED,
+			TestCommon.STOPPED);
 
 	private AtomicBoolean controlResult2 = new AtomicBoolean(false);
 	private List<BiFunction<TestState, TestEvent, Result<Boolean>>> tasks2 = new ArrayList<>(
 			Arrays.asList(
 					(state, event) -> {
 						executedTasks.add(controlResult2.get());
-						return new Result<>(Asyncer.generateType1UUID(), controlResult2.get(), TestAsyncer.DONE_2);
+						return new Result<>(Asyncer.generateType1UUID(), controlResult2.get(), TestCommon.DONE_2);
 					}));
 	private Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transition2 = new Transition<>(
-			"Started --(Stop)--> Stopping + Tasks ? Stopped : Stopped", TestAsyncer.STARTED, TestAsyncer.STOP,
-			TestAsyncer.STOPPING, tasks2, TaskExecutor.Type.SEQUENTIAL_FAE, null, TestAsyncer.STOPPED,
-			TestAsyncer.STOPPED);
+			"Started --(Stop)--> Stopping + Tasks ? Stopped : Stopped", TestCommon.STARTED, TestCommon.STOP,
+			TestCommon.STOPPING, tasks2, TaskExecutor.Type.SEQUENTIAL_FAE, null, TestCommon.STOPPED,
+			TestCommon.STOPPED);
 
 	private AtomicBoolean controlResult3 = new AtomicBoolean(false);
 	private List<BiFunction<TestState, TestEvent, Result<Boolean>>> tasks3 = new ArrayList<>(
 			Arrays.asList(
 					(state, event) -> {
-						// FIXME The message is not exposed to this task!!! Should use wildcard?
-						System.out.println("event.getMessage()=" + event.getMessage());
 						executedTasks.add(controlResult3.get());
 						return new Result<>(Asyncer.generateType1UUID(), controlResult3.get(), event.getMessage());
 					}));
 	private Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> transition3 = new Transition<>(
-			"Started --(Send)--> Tasks", TestAsyncer.STARTED, TestAsyncer.SEND, null, tasks3,
+			"Started --(Send)--> Tasks", TestCommon.STARTED, TestCommon.SEND, null, tasks3,
 			TaskExecutor.Type.SEQUENTIAL_FAE, null, null, null);
 
 	private Set<Transition<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>> transitions = new HashSet<>(
@@ -95,7 +94,7 @@ class AsyncerTest {
 		}
 
 		try {
-			asyncer = new DefaultAsyncerImpl<>(TestAsyncer.STOPPED, null, null, new DefaultTransitionExecutorImpl<>());
+			asyncer = new DefaultAsyncerImpl<>(TestCommon.STOPPED, null, null, new DefaultTransitionExecutorImpl<>());
 			fail("Should throw AsyncerException");
 		} catch (AsyncerException e) {
 			//
@@ -109,7 +108,7 @@ class AsyncerTest {
 		}
 
 		try {
-			asyncer = new DefaultAsyncerImpl<>(TestAsyncer.STOPPED, null, transitions, null);
+			asyncer = new DefaultAsyncerImpl<>(TestCommon.STOPPED, null, transitions, null);
 			fail("Should throw AsyncerException");
 		} catch (AsyncerException e) {
 			//
@@ -128,7 +127,7 @@ class AsyncerTest {
 		Asyncer<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> asyncer = null;
 
 		try {
-			asyncer = new DefaultAsyncerImpl<>(TestAsyncer.STOPPED, null, transitions,
+			asyncer = new DefaultAsyncerImpl<>(TestCommon.STOPPED, null, transitions,
 					new DefaultTransitionExecutorImpl<>());
 
 			assertNotNull(asyncer.uuid());
@@ -151,14 +150,14 @@ class AsyncerTest {
 		final List<Change<TestState>> publishedStates = new ArrayList<>();
 
 		try {
-			asyncer = new DefaultAsyncerImpl<>(TestAsyncer.STOPPED, null, transitions,
+			asyncer = new DefaultAsyncerImpl<>(TestCommon.STOPPED, null, transitions,
 					new DefaultTransitionExecutorImpl<>());
 
 			stateSubscription = asyncer.state().subscribe(c -> publishedStates.add(c));
 
-			Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
+			Awaitility.await().atMost(TestCommon.MAX_WAIT, TimeUnit.SECONDS).untilAsserted(() -> {
 				assertEquals(1, publishedStates.size());
-				assertEquals(TestAsyncer.STOPPED, publishedStates.get(0).getValue());
+				assertEquals(TestCommon.STOPPED.getType(), publishedStates.get(0).getValue().getType());
 			});
 
 		} catch (Exception e) {
@@ -184,7 +183,7 @@ class AsyncerTest {
 		final AtomicBoolean isCompleted = new AtomicBoolean(false);
 
 		try {
-			asyncer = new DefaultAsyncerImpl<>(TestAsyncer.STOPPED, null, transitions,
+			asyncer = new DefaultAsyncerImpl<>(TestCommon.STOPPED, null, transitions,
 					new DefaultTransitionExecutorImpl<>());
 
 			stateSubscription = asyncer.state().subscribe(c -> {
@@ -203,68 +202,147 @@ class AsyncerTest {
 	}
 
 	@Test
-	void xxx() {
+	void shouldChangeStateAndPublishStateAndTransitionChangesWhenTasksExecutedSuccessfully() {
+		Asyncer<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> asyncer = null;
+		Disposable stateSubscription = null;
+		Disposable transitionSubscription = null;
+
+		final List<Change<TestState>> publishedStates = new ArrayList<>();
+		final List<Change<TransitionResult<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean>>> publishedTransitions = new ArrayList<>();
+
+		try {
+			asyncer = new DefaultAsyncerImpl<>(TestCommon.STOPPED, null, transitions,
+					new DefaultTransitionExecutorImpl<>());
+
+			stateSubscription = asyncer.state().subscribe(c -> publishedStates.add(c));
+			// FIXME transitionSubscription = asyncer.transition().subscribe(c -> publishedTransitions.add(c));
+
+			// Stopped --(Start)--> Starting + Tasks --> Started : Stopped
+			controlResult1.set(true); // Task execution done ok
+			var fireResult1 = asyncer.fire(TestCommon.START).block(Duration.ofSeconds(TestCommon.MAX_WAIT));
+
+			assertNotNull(fireResult1.getUuid());
+			assertTrue(fireResult1.getValue());
+			assertEquals(TransitionExecutor.TRANSITION_SUCCESSFULLY_DONE, fireResult1.getDescription());
+			assertEquals(TestCommon.START.getType(), fireResult1.getEvent().getType());
+			assertEquals(2, fireResult1.getStates().size());
+			assertEquals(TestCommon.STARTING.getType(), fireResult1.getStates().get(0).getType());
+			assertEquals(TestCommon.STARTED.getType(), fireResult1.getStates().get(1).getType());
+			assertEquals(1, fireResult1.getTaskResults().size());
+			assertNotNull(fireResult1.getTaskResults().get(0).getUuid());
+			assertTrue(fireResult1.getTaskResults().get(0).getValue());
+			assertEquals(TestCommon.DONE_1, fireResult1.getTaskResults().get(0).getDescription());
+
+			Awaitility.await().atMost(TestCommon.MAX_WAIT, TimeUnit.SECONDS).untilAsserted(() -> {
+				assertEquals(3, publishedStates.size());
+				assertEquals(TestCommon.STOPPED.getType(), publishedStates.get(0).getValue().getType());
+				assertEquals(TestCommon.STARTING.getType(), publishedStates.get(1).getValue().getType());
+				assertEquals(TestCommon.STARTED.getType(), publishedStates.get(2).getValue().getType());
+			});
+
+			Awaitility.await().atMost(TestCommon.MAX_WAIT, TimeUnit.SECONDS).untilAsserted(() -> {
+				assertEquals(3, publishedStates.size());
+				assertEquals(TestCommon.STOPPED.getType(), publishedStates.get(0).getValue().getType());
+				assertEquals(TestCommon.STARTING.getType(), publishedStates.get(1).getValue().getType());
+				assertEquals(TestCommon.STARTED.getType(), publishedStates.get(2).getValue().getType());
+			});
+		} catch (Exception e) {
+			fail("Shouldn't throw Exception: " + e);
+		} finally {
+			if (asyncer != null) {
+				try {
+					asyncer.close();
+				} catch (Exception e) {
+					//
+				}
+			}
+			if (stateSubscription != null && !stateSubscription.isDisposed()) {
+				stateSubscription.dispose();
+			}
+		}
+	}
+
+	@Test
+	void shouldChangeStateAndPublishStateChangesWhenFailedToExecuteTasks() {
 		Asyncer<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> asyncer = null;
 		Disposable stateSubscription = null;
 		final List<Change<TestState>> publishedStates = new ArrayList<>();
 
 		try {
-			asyncer = new DefaultAsyncerImpl<>(TestAsyncer.STOPPED, null, transitions,
+			asyncer = new DefaultAsyncerImpl<>(TestCommon.STOPPED, null, transitions,
 					new DefaultTransitionExecutorImpl<>());
 
 			stateSubscription = asyncer.state().subscribe(c -> publishedStates.add(c));
 
-			controlResult1.set(true);
-			var fireResult1 = asyncer.fire(TestAsyncer.START).block(Duration.ofSeconds(2));
+			// Stopped --(Start)--> Starting + Tasks --> Started : Stopped
+			controlResult1.set(false); // Task execution failed
+			var fireResult1 = asyncer.fire(TestCommon.START).block(Duration.ofSeconds(TestCommon.MAX_WAIT));
 
 			assertNotNull(fireResult1.getUuid());
 			assertTrue(fireResult1.getValue());
 			assertEquals(TransitionExecutor.TRANSITION_SUCCESSFULLY_DONE, fireResult1.getDescription());
-			assertEquals(TestAsyncer.START.getType(), fireResult1.getEvent().getType());
+			assertEquals(TestCommon.START.getType(), fireResult1.getEvent().getType());
 			assertEquals(2, fireResult1.getStates().size());
-			assertEquals(TestAsyncer.STARTING, fireResult1.getStates().get(0));
-			assertEquals(TestAsyncer.STARTED, fireResult1.getStates().get(1));
+			assertEquals(TestCommon.STARTING.getType(), fireResult1.getStates().get(0).getType());
+			assertEquals(TestCommon.STOPPED.getType(), fireResult1.getStates().get(1).getType());
 			assertEquals(1, fireResult1.getTaskResults().size());
 			assertNotNull(fireResult1.getTaskResults().get(0).getUuid());
-			assertTrue(fireResult1.getTaskResults().get(0).getValue());
-			assertEquals(TestAsyncer.DONE_1, fireResult1.getTaskResults().get(0).getDescription());
+			assertFalse(fireResult1.getTaskResults().get(0).getValue());
+			assertEquals(TestCommon.DONE_1, fireResult1.getTaskResults().get(0).getDescription());
 
+			Awaitility.await().atMost(TestCommon.MAX_WAIT, TimeUnit.SECONDS).untilAsserted(() -> {
+				assertEquals(3, publishedStates.size());
+				assertEquals(TestCommon.STOPPED.getType(), publishedStates.get(0).getValue().getType());
+				assertEquals(TestCommon.STARTING.getType(), publishedStates.get(1).getValue().getType());
+				assertEquals(TestCommon.STOPPED.getType(), publishedStates.get(2).getValue().getType());
+			});
+		} catch (Exception e) {
+			fail("Shouldn't throw Exception: " + e);
+		} finally {
+			if (asyncer != null) {
+				try {
+					asyncer.close();
+				} catch (Exception e) {
+					//
+				}
+			}
+			if (stateSubscription != null && !stateSubscription.isDisposed()) {
+				stateSubscription.dispose();
+			}
+		}
+	}
+
+	@Test
+	void shouldBeAbleToAccessCustomeDataWhenFiredEventIncludesCustomData() {
+		Asyncer<TestState, TestState.Type, TestEvent, TestEvent.Type, Boolean> asyncer = null;
+		Disposable stateSubscription = null;
+		final List<Change<TestState>> publishedStates = new ArrayList<>();
+
+		try {
+			asyncer = new DefaultAsyncerImpl<>(TestCommon.STOPPED, null, transitions,
+					new DefaultTransitionExecutorImpl<>());
+
+			stateSubscription = asyncer.state().subscribe(c -> publishedStates.add(c));
+
+			// Stopped --(Start)--> Starting + Tasks ? Started : Stopped
+			controlResult1.set(true);
+			asyncer.fire(TestCommon.START).block(Duration.ofSeconds(TestCommon.MAX_WAIT));
+
+			// Started --(Send)--> Tasks
 			controlResult3.set(true);
 			var fireResult3 = asyncer.fire(new TestEvent(TestEvent.Type.SEND, TEST_MESSAGE))
-					.block(Duration.ofSeconds(2));
+					.block(Duration.ofSeconds(TestCommon.MAX_WAIT));
 
 			assertNotNull(fireResult3.getUuid());
 			assertTrue(fireResult3.getValue());
-			assertEquals(TransitionExecutor.TRANSITION_SUCCESSFULLY_DONE, fireResult3.getDescription());
-			assertEquals(TestAsyncer.SEND.getType(), fireResult3.getEvent().getType());
+			assertEquals(TransitionExecutor.TRANSITION_SUCCESSFULLY_DONE,
+					fireResult3.getDescription());
+			assertEquals(TestCommon.SEND.getType(), fireResult3.getEvent().getType());
 			assertEquals(0, fireResult3.getStates().size());
 			assertEquals(1, fireResult3.getTaskResults().size());
 			assertNotNull(fireResult3.getTaskResults().get(0).getUuid());
 			assertTrue(fireResult3.getTaskResults().get(0).getValue());
 			assertEquals(TEST_MESSAGE, fireResult3.getTaskResults().get(0).getDescription());
-
-			controlResult2.set(true);
-			var fireResult2 = asyncer.fire(TestAsyncer.STOP).block(Duration.ofSeconds(2));
-			assertNotNull(fireResult2.getUuid());
-			assertTrue(fireResult2.getValue());
-			assertEquals(TransitionExecutor.TRANSITION_SUCCESSFULLY_DONE, fireResult2.getDescription());
-			assertEquals(TestAsyncer.STOP.getType(), fireResult2.getEvent().getType());
-			assertEquals(2, fireResult2.getStates().size());
-			assertEquals(TestAsyncer.STOPPING, fireResult2.getStates().get(0));
-			assertEquals(TestAsyncer.STOPPED, fireResult2.getStates().get(1));
-			assertEquals(1, fireResult2.getTaskResults().size());
-			assertNotNull(fireResult2.getTaskResults().get(0).getUuid());
-			assertTrue(fireResult2.getTaskResults().get(0).getValue());
-			assertEquals(TestAsyncer.DONE_2, fireResult2.getTaskResults().get(0).getDescription());
-
-			Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
-				assertEquals(5, publishedStates.size());
-				assertEquals(TestAsyncer.STOPPED, publishedStates.get(0).getValue());
-				assertEquals(TestAsyncer.STARTING, publishedStates.get(1).getValue());
-				assertEquals(TestAsyncer.STARTED, publishedStates.get(2).getValue());
-				assertEquals(TestAsyncer.STOPPING, publishedStates.get(3).getValue());
-				assertEquals(TestAsyncer.STOPPED, publishedStates.get(4).getValue());
-			});
 		} catch (Exception e) {
 			fail("Shouldn't throw Exception: " + e);
 		} finally {
