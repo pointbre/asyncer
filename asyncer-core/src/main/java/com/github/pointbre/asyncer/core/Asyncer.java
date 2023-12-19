@@ -28,6 +28,9 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 
 	Mono<TransitionResult<S, T, E, F, R>> fire(E event);
 
+	public static final String ASYNCER_BEING_CLOSED = "Can't fire the event as asyncer is being closed";
+	public static final String ASYNCER_EVENT_REGISTRATION_INTERRUPTED = "Event registration has been interrupted";
+
 	@Value
 	@NonFinal
 	public class Typed<T> {
@@ -184,8 +187,7 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 			permits DefaultTransitionExecutorImpl {
 
 		public static final String TRANSITION_NULL_PARAMETER = "The provided parameters shouldn't be null";
-		public static final String TRANSITION_CURRENT_STATE_MISMATCH = "The current state and the transition doesn't match";
-		public static final String TRANSITION_CURRENT_EVENT_MISMATCH = "The current event and the transition doesn't match";
+		public static final String TRANSITION_NOT_FOUND = "No matching transition found";
 		public static final String TRANSITION_SUCCESSFULLY_DONE = "Successfully executed the transition";
 
 		public TransitionResult<S, T, E, F, R> run(@Nullable S state, @Nullable E event,
