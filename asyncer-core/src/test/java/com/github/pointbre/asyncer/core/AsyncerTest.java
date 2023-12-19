@@ -308,7 +308,10 @@ class AsyncerTest {
 			assertNull(fireResult1.getStates());
 			assertNull(fireResult1.getTaskResults());
 
-			Awaitility.await().atMost(TestCommon.MAX_WAIT, TimeUnit.SECONDS).untilAsserted(() -> { assertEquals(1, publishedStates.size()); assertEquals(TestCommon.STOPPED.getType(), publishedStates.get(0).getValue().getType()); });
+			Awaitility.await().atMost(TestCommon.MAX_WAIT, TimeUnit.SECONDS).untilAsserted(() -> {
+				assertEquals(1, publishedStates.size());
+				assertEquals(TestCommon.STOPPED.getType(), publishedStates.get(0).getValue().getType());
+			});
 		} catch (Exception e) {
 			fail("Shouldn't throw Exception: " + e);
 		} finally {
