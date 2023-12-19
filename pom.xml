@@ -13,7 +13,6 @@
 	<artifactId>asyncer</artifactId>
 	<version>1.0-SNAPSHOT</version>
 	<name>asyncer</name>
-	<url>http://github.com/pointbre</url>
 	<packaging>pom</packaging>
 
 	<modules>
@@ -35,6 +34,44 @@
 		<cucumber.version>7.14.0</cucumber.version>
 		<awaitility.version>4.2.0</awaitility.version>
 	</properties>
+
+	<url>https://github.com/pointbre/asyncer</url>
+	<issueManagement>
+		<system>GitHub Issues</system>
+		<url>https://github.com/pointbre/asyncer/issues</url>
+	</issueManagement>
+
+	<inceptionYear>2023</inceptionYear>
+	<organization>
+		<name>Lucas Kim</name>
+		<url>https://github.com/pointbre</url>
+	</organization>
+
+	<developers>
+		<developer>
+			<id>pointbre</id>
+			<name>Lucas Kim</name>
+			<email>pointbre@gmail.com</email>
+			<timezone>Pacific/Auckland</timezone>
+			<roles>
+				<role>developer</role>
+			</roles>
+		</developer>
+	</developers>
+
+	<scm>
+		<url>https://github.com/pointbre/asyncer</url>
+		<connection>scm:git:git://github.com/pointbre/asyncer.git</connection>
+		<developerConnection>scm:git:git@github.com:pointbre/asyncer.git</developerConnection>
+	</scm>
+
+	<licenses>
+		<license>
+			<name>The Apache Software License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
 
 	<dependencyManagement>
 		<dependencies>
@@ -142,6 +179,50 @@
 					</executions>
 				</plugin>
 				<plugin>
+					<artifactId>maven-clean-plugin</artifactId>
+					<version>3.2.0</version>
+					<configuration>
+						<filesets>
+							<fileset>
+								<directory>dist</directory>
+							</fileset>
+						</filesets>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-enforcer-plugin</artifactId>
+					<version>3.1.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>license-maven-plugin</artifactId>
+					<version>2.3.0</version>
+					<configuration>
+						<verbose>false</verbose>
+						<canUpdateCopyright>true</canUpdateCopyright>
+						<canUpdateDescription>true</canUpdateDescription>
+					</configuration>
+					<executions>
+						<execution>
+							<id>add-third-party</id>
+							<goals>
+								<goal>add-third-party</goal>
+							</goals>
+						</execution>
+						<execution>
+							<id>second</id>
+							<goals>
+								<goal>update-file-header</goal>
+							</goals>
+							<phase>process-sources</phase>
+							<configuration>
+								<licenseName>apache_v2</licenseName>
+							</configuration>
+						</execution>
+					</executions>
+				</plugin>
+				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
 					<version>3.2.2</version>
@@ -170,11 +251,6 @@
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-enforcer-plugin</artifactId>
-					<version>3.1.0</version>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-site-plugin</artifactId>
 					<version>3.12.1</version>
 				</plugin>
@@ -182,22 +258,6 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-project-info-reports-plugin</artifactId>
 					<version>3.4.1</version>
-				</plugin>
-				<plugin>
-					<artifactId>maven-clean-plugin</artifactId>
-					<version>3.2.0</version>
-					<configuration>
-						<filesets>
-							<fileset>
-								<directory>dist</directory>
-							</fileset>
-						</filesets>
-					</configuration>
-				</plugin>
-				<plugin>
-					<groupId>org.springframework.boot</groupId>
-					<artifactId>spring-boot-maven-plugin</artifactId>
-					<version>3.0.0</version>
 				</plugin>
 			</plugins>
 		</pluginManagement>
@@ -234,6 +294,10 @@
 						</goals>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>license-maven-plugin</artifactId>
 			</plugin>
 		</plugins>
 	</build>
