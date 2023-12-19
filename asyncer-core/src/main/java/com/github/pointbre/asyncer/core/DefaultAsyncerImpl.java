@@ -42,8 +42,7 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 	private final TransitionExecutor<S, T, E, F, Boolean> transitionExecutor;
 
 	private final BlockingQueue<Request<S, T, E, F>> requests = new LinkedBlockingQueue<>();
-	private final Thread transitionHandler;
-	private final Request<S, T, E, F> POISON_PILL = new Request<>(null, null);
+	private final Request<S, T, E, F> poisonPill = new Request<>(null, null);
 	private final AtomicBoolean isBeingClosed = new AtomicBoolean(false);
 
 	private final Many<Change<S>> stateSink = Sinks.many().multicast()
@@ -77,8 +76,7 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 		this.transitions = transitions;
 		this.transitionExecutor = transitionExecutor;
 
-		// FIXME Better put this into a separate class? Or injected?
-		this.transitionHandler = Thread.ofVirtual().name("asyncer-transition-handler").start(() -> {
+		Thread.ofVirtual().name("asyncer-transition-handler").start(() -> {
 
 			while (true) {
 				Request<S, T, E, F> request = null;
@@ -89,7 +87,7 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 					break;
 				}
 
-				if (request.equals(POISON_PILL)) {
+				if (request.equals(poisonPill)) {
 					break;
 				}
 
@@ -180,7 +178,7 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 		transitionResultSink.tryEmitComplete();
 
 		try {
-			requests.put(POISON_PILL);
+			requests.put(poisonPill);
 
 			while (!requests.isEmpty()) {
 				Thread.sleep(Duration.ofMillis(100));
