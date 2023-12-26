@@ -79,6 +79,13 @@ public class DefaultAsyncerImpl<S extends State<T>, T, E extends Event<F>, F> im
 			.withMaxRetries(5)
 			.build());
 
+	/**
+	 * 
+	 * @param initialState
+	 * @param transitions
+	 * @param transitionExecutor
+	 * @throws AsyncerException
+	 */
 	public DefaultAsyncerImpl(@Nullable S initialState, @Nullable Set<Transition<S, T, E, F, Boolean>> transitions,
 			@Nullable TransitionExecutor<S, T, E, F, Boolean> transitionExecutor) throws AsyncerException {
 

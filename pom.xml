@@ -4,14 +4,9 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<!-- Use version-maven-plugin to update version -->
-	<!-- 1. mvn versions:set -DnewVersion=1.0.1-SNAPSHOT -->
-	<!-- 2. Review the change -->
-	<!-- 3. mvn versions:commit or mvn versions:revert -->
-
 	<groupId>com.github.pointbre</groupId>
 	<artifactId>asyncer</artifactId>
-	<version>1.0-SNAPSHOT</version>
+	<version>0.0.1-SNAPSHOT</version>
 	<name>asyncer</name>
 	<packaging>pom</packaging>
 
@@ -196,6 +191,11 @@
 				</plugin>
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>versions-maven-plugin</artifactId>
+					<version>2.16.2</version>
+				</plugin>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>license-maven-plugin</artifactId>
 					<version>2.3.0</version>
 					<configuration>
@@ -219,6 +219,21 @@
 							<configuration>
 								<licenseName>apache_v2</licenseName>
 							</configuration>
+						</execution>
+					</executions>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-javadoc-plugin</artifactId>
+					<configuration>
+						<additionalOptions>--enable-preview</additionalOptions>
+					</configuration>
+					<executions>
+						<execution>
+							<id>attach-javadocs</id>
+							<goals>
+								<goal>jar</goal>
+							</goals>
 						</execution>
 					</executions>
 				</plugin>

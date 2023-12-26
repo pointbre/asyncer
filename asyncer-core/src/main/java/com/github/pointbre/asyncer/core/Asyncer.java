@@ -49,6 +49,7 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 	Mono<TransitionResult<S, T, E, F, R>> fire(E event);
 
 	public static final String ASYNCER_BEING_CLOSED = "Can't fire the event as asyncer is being closed";
+
 	public static final String ASYNCER_EVENT_REGISTRATION_INTERRUPTED = "Event registration has been interrupted";
 
 	@Value
@@ -233,7 +234,6 @@ public interface Asyncer<S extends State<T>, T, E extends Event<F>, F, R> extend
 				@Nullable Duration timeout);
 	}
 
-	// The below code is from https://www.baeldung.com/java-uuid
 	public static UUID generateType1UUID() {
 		long most64SigBits = Asyncer.get64MostSignificantBitsForVersion1();
 		long least64SigBits = Asyncer.get64LeastSignificantBitsForVersion1();
