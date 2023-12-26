@@ -288,9 +288,6 @@
 					<!-- Run `mvn enforcer:display-info` to get the current
 					configurations -->
 					<rules>
-						<requireMavenVersion>
-							<version>3.8.1</version>
-						</requireMavenVersion>
 						<requireJavaVersion>
 							<version>21</version>
 						</requireJavaVersion>
